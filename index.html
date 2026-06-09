@@ -240,6 +240,19 @@ footer{border-top:1px solid var(--line);padding:18px 0;color:var(--muted);font-s
 .rsearch input{flex:1}
 .rsugg{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
 .rsugg .rlbl{font-size:11px;color:var(--muted);width:100%;margin:2px 0 1px;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+
+/* requirements packet */
+.pmeta{font-size:13px;color:var(--muted);margin:0 0 8px;line-height:1.5}
+.pdisc{font-size:12.5px;background:rgba(226,71,81,.10);border:1px solid rgba(226,71,81,.35);color:var(--ink);padding:7px 10px;border-radius:8px;margin:0 0 12px}
+.pbody{white-space:normal}
+.pbody h2{font-size:18px;margin:18px 0 6px;border-bottom:1px solid var(--line);padding-bottom:4px}
+.pbody h3{font-size:15.5px;margin:14px 0 4px;color:var(--accent)}
+.pbody h4,.pbody h5,.pbody h6{font-size:14px;margin:10px 0 3px}
+.pbody p{margin:5px 0;line-height:1.55}
+.pbody ul{margin:5px 0 8px;padding-left:20px}
+.pbody li{margin:3px 0;line-height:1.5}
+.pbody hr{border:0;border-top:1px solid var(--line);margin:14px 0}
+.pbody .cite{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;color:var(--accent);background:rgba(127,127,127,.10);padding:0 4px;border-radius:4px;white-space:nowrap}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -306,6 +319,17 @@ footer{border-top:1px solid var(--line);padding:18px 0;color:var(--muted);font-s
     <div id="rSugg" class="rsugg"></div>
     <div id="rRecent" class="rsugg"></div>
     <div class="answer" id="rA"></div>
+  </div>
+</section>
+
+  <!-- REQUIREMENTS PACKET -->
+  <section class="panel" id="p-packet">
+  <div class="card tool">
+    <h2>Requirements packet</h2>
+    <p class="lead">Pick a regulation subpart and get a complete, organized rundown of <b>everything it requires</b> — leak definitions, monitoring methods &amp; frequencies, repair timelines, delay-of-repair allowances, exemptions, plus recordkeeping &amp; reporting — with <b>every line cited to the exact eCFR paragraph</b>. Built straight from the official eCFR.</p>
+    <div id="pSugg" class="rsugg"></div>
+    <div class="rsearch" style="margin-top:8px"><input type="text" id="pQ" placeholder="Or type:  title part subpart   (e.g. 40 63 H)" autocomplete="off"><button class="btn" id="pBtn">Generate</button></div>
+    <div class="answer" id="pA"></div>
   </div>
 </section>
 
@@ -403,7 +427,7 @@ document.addEventListener("touchstart",e=>{const t=e.changedTouches[0];tx=t.scre
 document.addEventListener("touchend",e=>{const t=e.changedTouches[0];const dx=t.screenX-tx,dy=t.screenY-ty;if(Math.max(Math.abs(dx),Math.abs(dy))<28)return;let d=Math.abs(dx)>Math.abs(dy)?(dx>0?"R":"L"):(dy>0?"D":"U");if(d===SWIPE[spos]){spos++;if(spos===SWIPE.length){spos=0;unlockCyber();}}else{spos=(d===SWIPE[0])?1:0;}},{passive:true});
 
 /* ---------- TABS ---------- */
-const TABS=[["dashboard","Dashboard"],["ask","Community"],["enf","Enforcement"],["rules","Rule lookup"],["fac","My account"]];
+const TABS=[["dashboard","Dashboard"],["ask","Community"],["enf","Enforcement"],["rules","Rule lookup"],["packet","Requirements packet"],["fac","My account"]];
 $("#tabs").innerHTML=TABS.map((t,i)=>`<button class="tab" role="tab" data-p="${t[0]}" aria-selected="${i===0}">${t[1]}</button>`).join("");
 $$(".tab").forEach(b=>b.onclick=()=>{$$(".tab").forEach(x=>x.setAttribute("aria-selected","false"));b.setAttribute("aria-selected","true");$$(".panel").forEach(p=>p.classList.remove("active"));$("#p-"+b.dataset.p).classList.add("active");window.scrollTo({top:0,behavior:"smooth"});});
 
@@ -554,6 +578,76 @@ $("#rBtn").onclick=function(){var v=$("#rQ").value.trim();if(!v){$("#rQ").focus(
 $("#rQ").addEventListener("input",renderRSugg);
 $("#rQ").addEventListener("keydown",function(e){if(e.key==="Enter")$("#rBtn").click();});
 renderRSugg();
+
+/* ---------- REQUIREMENTS PACKET ---------- */
+var PSUBS=[
+ {l:"40 CFR 63 Subpart H — Equipment leaks (HON / synthetic organic chemical)",t:"40",p:"63",s:"H"},
+ {l:"40 CFR 63 Subpart TT — Equipment leaks, control level 1",t:"40",p:"63",s:"TT"},
+ {l:"40 CFR 63 Subpart UU — Equipment leaks, control level 2",t:"40",p:"63",s:"UU"},
+ {l:"40 CFR 60 Subpart VV — SOCMI equipment leaks (VOC)",t:"40",p:"60",s:"VV"},
+ {l:"40 CFR 60 Subpart VVa — SOCMI equipment leaks (VOC), newer sources",t:"40",p:"60",s:"VVa"},
+ {l:"40 CFR 60 Subpart GGG — Petroleum refinery equipment leaks",t:"40",p:"60",s:"GGG"},
+ {l:"40 CFR 60 Subpart GGGa — Petroleum refinery equipment leaks (newer)",t:"40",p:"60",s:"GGGa"},
+ {l:"40 CFR 65 Subpart F — Consolidated equipment leaks",t:"40",p:"65",s:"F"}
+];
+function renderPSugg(){
+  var f=($("#pQ")?$("#pQ").value:"").toLowerCase();
+  var items=PSUBS.filter(function(s){return !f||s.l.toLowerCase().indexOf(f)>=0;});
+  $("#pSugg").innerHTML=(items.length?'<span class="rlbl">Equipment-leak / LDAR subparts</span>':"")+items.map(function(s,i){return '<button class="chip" data-ps="'+i+'">'+esc(s.l)+'</button>';}).join("");
+  $$("#pSugg [data-ps]").forEach(function(b){b.onclick=function(){doPacket(items[+b.dataset.ps]);};});
+}
+function parsePacket(v){
+  var m=v.replace(/c\.?f\.?r\.?|subpart|part|§/ig," ").replace(/[^0-9A-Za-z]+/g," ").trim().split(/\s+/).filter(Boolean);
+  if(m.length<2)return null;
+  var t="40",p,sub;
+  if(m.length>=3){t=m[0];p=m[1];sub=m[2];}else{p=m[0];sub=m[1];}
+  if(!/^\d+$/.test(t)||!/^\d+$/.test(p))return null;
+  return {t:t,p:p,s:sub};
+}
+function mdCiteWrap(s){return s.replace(/\[(§[^\]]+)\]/g,'<span class="cite">[$1]<\/span>');}
+function mdInlineP(s){
+  s=esc(s);
+  s=s.replace(/\[([^\]]+)\]\((https?:[^)]+)\)/g,'<a href="$2" target="_blank" rel="noopener">$1<\/a>');
+  s=s.replace(/\*\*([^*]+)\*\*/g,'<strong>$1<\/strong>');
+  s=s.replace(/(https?:\/\/[^\s<)\]]+)/g,'<a href="$1" target="_blank" rel="noopener">link↗<\/a>');
+  s=mdCiteWrap(s);
+  return s;
+}
+function mdPacket(md){
+  var out=[],inList=false;
+  (md||"").split(/\r?\n/).forEach(function(ln){
+    var t=ln.trim();
+    if(t===""){if(inList){out.push("<\/ul>");inList=false;}return;}
+    if(/^---+$/.test(t)){if(inList){out.push("<\/ul>");inList=false;}out.push("<hr>");return;}
+    var h=t.match(/^(#{1,6})\s+(.*)$/);
+    if(h){if(inList){out.push("<\/ul>");inList=false;}var lv=Math.min(h[1].length+1,6);out.push("<h"+lv+">"+mdInlineP(h[2])+"<\/h"+lv+">");return;}
+    var li=t.match(/^[-*]\s+(.*)$/);
+    if(li){if(!inList){out.push("<ul>");inList=true;}out.push("<li>"+mdInlineP(li[1])+"<\/li>");return;}
+    if(inList){out.push("<\/ul>");inList=false;}
+    out.push("<p>"+mdInlineP(t)+"<\/p>");
+  });
+  if(inList)out.push("<\/ul>");
+  return out.join("");
+}
+async function doPacket(o){
+  var A=$("#pA"),B=$("#pBtn");A.classList.add("show");
+  if(B){B.disabled=true;}
+  A.innerHTML='<div class="note"><span class="spin"></span> Building the '+esc((o.t||"40")+" CFR "+o.p+" Subpart "+o.s)+' packet from the official eCFR… the first time for a subpart can take 30–60 seconds; after that it loads instantly.</div>';
+  try{
+    var r=await fetch(FN+"req-packet",{method:"POST",headers:HDRS,body:JSON.stringify({title:o.t||"40",part:o.p,subpart:o.s})});
+    var d=await r.json();
+    if(!d||d.error||!d.packet_md){A.innerHTML='<div class="empty">'+esc((d&&d.error)||"Couldn’t build that packet. Check the part/subpart and try again.")+'</div>';if(B)B.disabled=false;return;}
+    var meta='<div class="pmeta">Source: <b>'+esc(d.citation)+'</b> · current eCFR as of <b>'+esc(d.version_date)+'</b> · '+(d.cached?"freshness-checked just now":"freshly generated")+' · model '+esc(d.model)+' · <a href="'+esc(d.url)+'" target="_blank" rel="noopener">view on eCFR ↗</a></div>';
+    var disc='<div class="pdisc">⚠ AI-generated orientation summary — always verify against the linked eCFR before relying on it for compliance.</div>';
+    A.innerHTML=meta+disc+'<div class="cfrtext pbody">'+mdPacket(d.packet_md)+'</div><div style="margin-top:10px"><button class="btn ghost" id="pCopy">Copy as text</button></div>';
+    var cp=$("#pCopy");if(cp)cp.onclick=function(){navigator.clipboard.writeText(d.packet_md).then(function(){toast("Packet copied");});};
+  }catch(e){A.innerHTML='<div class="note">Network error — please try again.</div>';}
+  if(B)B.disabled=false;
+}
+$("#pBtn").onclick=function(){var v=$("#pQ").value.trim();if(!v){$("#pQ").focus();return;}var o=parsePacket(v);if(!o){$("#pA").classList.add("show");$("#pA").innerHTML='<div class="empty">Type it as <b>title part subpart</b> — e.g. <b>40 63 H</b> or <b>40 60 VVa</b> — or pick one above.</div>';return;}doPacket(o);};
+$("#pQ").addEventListener("input",renderPSugg);
+$("#pQ").addEventListener("keydown",function(e){if(e.key==="Enter")$("#pBtn").click();});
+renderPSugg();
 
 /* ---------- ACCOUNTS (Supabase Auth) ---------- */
 window.__custom=window.__custom||{pinned:new Set(),hidden:new Set(),ack:new Set()};
