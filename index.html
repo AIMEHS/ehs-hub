@@ -235,6 +235,11 @@ footer{border-top:1px solid var(--line);padding:18px 0;color:var(--muted);font-s
 .tag.ok{background:var(--good);color:#fff}
 .modal .field input{font-size:16px;padding:12px 14px;height:auto}
 .tab[data-p="admin"]{color:var(--brand);font-weight:800}
+
+.rsearch{display:flex;gap:8px;margin-bottom:10px}
+.rsearch input{flex:1}
+.rsugg{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.rsugg .rlbl{font-size:11px;color:var(--muted);width:100%;margin:2px 0 1px;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -294,26 +299,15 @@ footer{border-top:1px solid var(--line);padding:18px 0;color:var(--muted);font-s
 
   <!-- RULE LOOKUP -->
   <section class="panel" id="p-rules">
-    <div class="card tool">
-      <h2>Rule-text lookup</h2>
-      <p class="lead">Pull the current text of any Code of Federal Regulations citation straight from the official eCFR — so the Hub is also a fast reference, not just a news feed.</p>
-      <div class="row">
-        <div class="field" style="max-width:110px"><label>Title</label><input type="number" id="rTitle" value="40"></div>
-        <div class="field" style="max-width:130px"><label>Part</label><input type="text" id="rPart" placeholder="98"></div>
-        <div class="field" style="max-width:150px"><label>Section (optional)</label><input type="text" id="rSec" placeholder="98.2"></div>
-        <div class="field" style="max-width:150px"><label>Subpart (optional)</label><input type="text" id="rSub" placeholder="W"></div>
-      </div>
-      <div class="filters" style="margin-top:0">
-        <span class="note" style="margin:0 6px 0 0">Quick:</span>
-        <button class="chip" data-cfr="40|98||W">40 CFR 98 Subpart W (GHG)</button>
-        <button class="chip" data-cfr="40|60|60.18|">NSPS Gen'l (60.18)</button>
-        <button class="chip" data-cfr="40|63||">NESHAP (Part 63)</button>
-        <button class="chip" data-cfr="40|260||">RCRA (Part 260)</button>
-      </div>
-      <button class="btn" id="rBtn">Look up rule text</button>
-      <div class="answer" id="rA"></div>
-    </div>
-  </section>
+  <div class="card tool">
+    <h2>Rule-text lookup</h2>
+    <p class="lead">Search by citation (e.g. <b>40 CFR 98.2</b>, <b>63 Subpart H</b>) or in plain English (e.g. <b>greenhouse gas reporting</b>, <b>equipment leaks</b>). Text comes straight from the official eCFR.</p>
+    <div class="rsearch"><input type="text" id="rQ" placeholder="Citation or keyword…" autocomplete="off"><button class="btn" id="rBtn">Search</button></div>
+    <div id="rSugg" class="rsugg"></div>
+    <div id="rRecent" class="rsugg"></div>
+    <div class="answer" id="rA"></div>
+  </div>
+</section>
 
   <!-- MY FACILITY -->
   <section class="panel" id="p-fac">
@@ -501,18 +495,65 @@ $("#enfBtn").onclick=async()=>{
 };
 
 /* ---------- RULE LOOKUP ---------- */
-$$('[data-cfr]').forEach(c=>c.onclick=()=>{const p=c.dataset.cfr.split("|");$("#rTitle").value=p[0];$("#rPart").value=p[1];$("#rSec").value=p[2]||"";$("#rSub").value=p[3]||"";$("#rBtn").click();});
-$("#rBtn").onclick=async()=>{
-  const part=$("#rPart").value.trim();if(!part){$("#rPart").focus();return;}
-  const b=$("#rBtn"),a=$("#rA");b.disabled=true;b.innerHTML='<span class="spin"></span> Fetching…';a.classList.add("show");a.innerHTML='<span class="note">Pulling current text from eCFR…</span>';
+var RSUGG=[
+  {l:"GHGRP — Greenhouse Gas Reporting (Part 98)",p:{title:"40",part:"98"}},
+  {l:"Subpart W — Oil & Gas GHG (40 CFR 98 W)",p:{title:"40",part:"98",subpart:"W"}},
+  {l:"§98.2 — Who must report",p:{title:"40",part:"98",section:"98.2"}},
+  {l:"NESHAP general provisions (63 Subpart A)",p:{title:"40",part:"63",subpart:"A"}},
+  {l:"NESHAP equipment leaks (63 Subpart H)",p:{title:"40",part:"63",subpart:"H"}},
+  {l:"NSPS general provisions (§60.18)",p:{title:"40",part:"60",section:"60.18"}},
+  {l:"Equipment leaks of VOC (60 Subpart VV)",p:{title:"40",part:"60",subpart:"VV"}},
+  {l:"Title V operating permits (Part 70)",p:{title:"40",part:"70"}},
+  {l:"RCRA hazardous waste (Part 260)",p:{title:"40",part:"260"}},
+  {l:"EPCRA TRI reporting (Part 372)",p:{title:"40",part:"372"}},
+  {l:"OSHA respiratory protection (§1910.134)",p:{title:"29",part:"1910",section:"1910.134"}}
+];
+function rRecents(){try{return JSON.parse(localStorage.getItem("hubRecentCites")||"[]");}catch(e){return[];}}
+function rAddRecent(cite,p){var arr=rRecents().filter(function(x){return x.cite!==cite;});arr.unshift({cite:cite,p:p});localStorage.setItem("hubRecentCites",JSON.stringify(arr.slice(0,6)));}
+function renderRSugg(){
+  var f=($("#rQ")?$("#rQ").value:"").toLowerCase();
+  var items=RSUGG.filter(function(s){return !f||s.l.toLowerCase().indexOf(f)>=0;});
+  $("#rSugg").innerHTML=items.length?'<span class="rlbl">Common regulations</span>'+items.map(function(s,i){return '<button class="chip" data-rs="'+i+'">'+esc(s.l)+'</button>';}).join(""):"";
+  $$("#rSugg [data-rs]").forEach(function(b){b.onclick=function(){doRuleLookup(items[+b.dataset.rs].p);};});
+  var rec=rRecents();
+  $("#rRecent").innerHTML=rec.length?'<span class="rlbl">Recent</span>'+rec.map(function(r,i){return '<button class="chip" data-rr="'+i+'">'+esc(r.cite)+'</button>';}).join(""):"";
+  $$("#rRecent [data-rr]").forEach(function(b){b.onclick=function(){doRuleLookup(rRecents()[+b.dataset.rr].p);};});
+}
+function parseCite(input){
+  var s=input.replace(/§/g,"").trim();
+  if(!/^\s*\d/.test(s)&&!/cfr/i.test(input))return null;
+  var m=s.match(/(?:(\d+)\s*(?:cfr|c\.f\.r\.)\s*)?(\d+)(?:\s*\.\s*(\d+[a-z\-]*))?(?:\s*subpart\s*([0-9a-z]+))?/i);
+  if(!m||!m[2])return null;
+  return {title:m[1]||"40",part:m[2],section:m[3]?(m[2]+"."+m[3]):"",subpart:m[4]||""};
+}
+async function doRuleLookup(p){
+  var a=$("#rA"),b=$("#rBtn");b.disabled=true;b.innerHTML='<span class="spin"></span>';a.classList.add("show");a.innerHTML='<span class="note">Pulling current text from the official eCFR…</span>';
   try{
-    const r=await fetch(FN+"ecfr",{method:"POST",headers:HDRS,body:JSON.stringify({title:$("#rTitle").value,part:part,section:$("#rSec").value,subpart:$("#rSub").value})});
-    const d=await r.json();
-    if(d.text){a.innerHTML='<h4>'+esc(d.citation)+' <span style="color:var(--muted);font-weight:600;text-transform:none;letter-spacing:0">· current as of '+esc(d.date)+'</span></h4><div class="cfrtext">'+esc(d.text)+(d.truncated?'\n\n…(truncated)':"")+'</div><div class="note">Official source: <a href="'+esc(d.url)+'" target="_blank" rel="noopener">'+esc(d.citation)+' on eCFR.gov ↗</a>. Regulations change — confirm the current text and your applicable subparts before relying on this.</div>';}
-    else{a.innerHTML='<div class="note">'+esc(d.error||"Couldn\'t find that cite.")+' Try just a Title + Part (e.g., 40 / 98).</div>';}
+    var body=p.q?{q:p.q}:{title:p.title||"40",part:p.part,section:p.section||"",subpart:p.subpart||""};
+    var r=await fetch(FN+"ecfr",{method:"POST",headers:HDRS,body:JSON.stringify(body)});
+    var d=await r.json();
+    if(d.text){
+      rAddRecent(d.citation,p);
+      a.innerHTML='<h4>'+esc(d.citation)+' <span style="color:var(--muted);font-weight:600;text-transform:none;letter-spacing:0">· current as of '+esc(d.date)+'</span></h4>'+(d.matchedFrom?'<div class="note" style="margin:0 0 8px">Matched from “'+esc(d.matchedFrom)+'” — confirm it’s the rule you mean.</div>':"")+'<div class="cfrtext">'+esc(d.text)+(d.truncated?"\n\n…(truncated — open the full text via the link)":"")+'</div><div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap"><a class="btn ghost" href="'+esc(d.url)+'" target="_blank" rel="noopener">Open on eCFR.gov ↗</a><button class="btn ghost" id="rSumm">Plain-English summary</button></div><div class="answer" id="rSummA" style="margin-top:10px"></div><div class="note" style="margin-top:8px">Official source: eCFR.gov, current as of '+esc(d.date)+'. Regulations change — confirm against the governing rule before relying on this.</div>';
+      var sb=$("#rSumm");if(sb)sb.onclick=function(){summarizeCfr(d.citation,d.text);};
+    }else{
+      a.innerHTML='<div class="empty">'+esc(d.error||"Couldn’t find that. Try a citation like 40 CFR 98.2, or a keyword like “greenhouse gas reporting”.")+'</div>';
+    }
   }catch(e){a.innerHTML='<div class="note">Network error — please try again.</div>';}
-  b.disabled=false;b.textContent="Look up rule text";
-};
+  b.disabled=false;b.textContent="Search";renderRSugg();
+}
+async function summarizeCfr(cite,text){
+  var sa=$("#rSummA");if(!sa)return;sa.classList.add("show");sa.innerHTML='<span class="note"><span class="spin"></span> Summarizing in plain English…</span>';
+  try{
+    var r=await fetch(FN+"ask-hub",{method:"POST",headers:HDRS,body:JSON.stringify({question:"In plain English for a compliance manager, summarize "+cite+" — what it requires and who it applies to. Rule text follows:\n\n"+(text||"").slice(0,4000)})});
+    var d=await r.json();
+    sa.innerHTML=d.answer?'<h4>Plain-English summary</h4><div>'+mdLite(d.answer)+'</div><div class="note">Orientation only — the rule text above is authoritative.</div>':'<div class="note">Couldn’t summarize right now.</div>';
+  }catch(e){sa.innerHTML='<div class="note">Couldn’t summarize right now.</div>';}
+}
+$("#rBtn").onclick=function(){var v=$("#rQ").value.trim();if(!v){$("#rQ").focus();return;}var c=parseCite(v);doRuleLookup(c||{q:v});};
+$("#rQ").addEventListener("input",renderRSugg);
+$("#rQ").addEventListener("keydown",function(e){if(e.key==="Enter")$("#rBtn").click();});
+renderRSugg();
 
 /* ---------- ACCOUNTS (Supabase Auth) ---------- */
 window.__custom=window.__custom||{pinned:new Set(),hidden:new Set(),ack:new Set()};
