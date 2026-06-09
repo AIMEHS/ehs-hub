@@ -253,6 +253,26 @@ footer{border-top:1px solid var(--line);padding:18px 0;color:var(--muted);font-s
 .pbody li{margin:3px 0;line-height:1.5}
 .pbody hr{border:0;border-top:1px solid var(--line);margin:14px 0}
 .pbody .cite{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;color:var(--accent);background:rgba(127,127,127,.10);padding:0 4px;border-radius:4px;white-space:nowrap}
+
+/* tickets parity + expert title + delete */
+.pscol{display:flex;flex-direction:column;line-height:1.15;gap:1px}
+.psname{display:inline-flex;align-items:center;gap:5px}
+.delpost{margin-left:8px;background:transparent;border:0;cursor:pointer;color:var(--muted);font-size:14px;line-height:1}
+.delpost:hover{color:#e24751}
+.tfilters{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+.tfrow{display:flex;gap:6px;flex-wrap:wrap}
+.tix .tixhd{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:5px}
+.tixno{font-weight:800;font-size:14px}
+.sbadge{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;padding:2px 8px;border-radius:999px;color:#fff}
+.sb-open{background:#d9822b}.sb-prog{background:#1d9bf0}.sb-res{background:#1f9d55}.sb-clo{background:#6b7280}
+.tctrl{display:flex;gap:14px;flex-wrap:wrap;margin:10px 0 4px}
+.tctrl label{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.tctrl select{padding:5px 8px;border-radius:7px;border:1px solid var(--line);background:var(--panel2);color:var(--ink);font-size:13px}
+.tnotes{margin:8px 0;display:flex;flex-direction:column;gap:5px}
+.tnote{background:color-mix(in srgb,#d9822b 12%,var(--panel));border:1px solid var(--line);border-radius:8px;padding:6px 9px;font-size:12.5px}
+.tnt{display:block;color:var(--muted);font-size:11px;margin-top:3px}
+.tnoteadd{display:flex;gap:8px;margin-top:6px}
+.tnoteadd input{flex:1;padding:7px 10px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);color:var(--ink);font-size:13px}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -763,10 +783,16 @@ function avatarHTML(name,photo,sme){
   var img=photo?'<img src="'+esc(photo)+'" alt="">':'<span>'+esc(initials)+'</span>';
   return '<span class="avatar">'+img+'</span>';
 }
+function adminDelBtn(id){return '<button class="delpost" data-del="'+id+'" title="Delete (admin)">🗑</button>';}
+async function adminDeletePost(id){
+  if(!confirm("Delete this post? It will be hidden from the community (soft delete — reversible)."))return;
+  try{await sbc.from("community_posts").update({status:"deleted"}).eq("id",id);toast("Post deleted");loadCommunity();}catch(e){toast("Delete failed: "+(e.message||e));}
+}
 function poster(p){
   if(p.anonymous)return '<span class="psr">'+avatarHTML("?",null,false)+'<b>Anonymous</b></span>';
   var check=p.author_sme?' <span class="bluecheck" title="Verified EHS expert">✓</span>':'';
-  return '<span class="psr">'+avatarHTML(p.author_name,p.author_photo,p.author_sme)+'<b class="authlink" data-uid="'+esc(p.user_id||"")+'">'+esc(p.author_name||"Member")+'</b>'+check+'</span>';
+  var title=p.author_sme?'<span class="smetag">Verified EHS expert</span>':'';
+  return '<span class="psr">'+avatarHTML(p.author_name,p.author_photo,p.author_sme)+'<span class="pscol"><span class="psname"><b class="authlink" data-uid="'+esc(p.user_id||"")+'">'+esc(p.author_name||"Member")+'</b>'+check+'</span>'+title+'</span></span>';
 }
 function wireAuthLinks(scope){(scope||document).querySelectorAll('.authlink').forEach(function(a){if(a.dataset.uid)a.onclick=function(){openProfile(a.dataset.uid);};});}
 async function openProfile(uid){
@@ -821,7 +847,7 @@ async function submitQuestion(){
 }
 function renderCommunity(){
   var list=$("#commList");if(!list)return;
-  var posts=window.__posts||[];
+  var posts=(window.__posts||[]).filter(function(p){return p.status!=="deleted";});
   var qs=posts.filter(function(p){return !p.parent_id;}).sort(function(a,b){return new Date(b.created_at)-new Date(a.created_at);});
   var ans=posts.filter(function(p){return p.parent_id;});
   if(!qs.length){list.innerHTML='<div class="empty">No questions yet — be the first to ask the community.</div>';return;}
@@ -830,15 +856,16 @@ function renderCommunity(){
     var pend=q.status!=="approved";
     var qa=ans.filter(function(a){return a.parent_id===q.id;}).sort(function(a,b){return new Date(a.created_at)-new Date(b.created_at);});
     return '<div class="card qpost'+(pend?" pend":"")+'">'+
-      '<div class="qhead">'+poster(q)+(pend?'<span class="pendtag">'+(mine?"Awaiting approval":"Pending")+'</span>':'<span class="qtime">'+timeAgo(q.created_at)+'</span>')+'</div>'+
+      '<div class="qhead">'+poster(q)+(pend?'<span class="pendtag">'+(mine?"Awaiting approval":"Pending")+'</span>':'<span class="qtime">'+timeAgo(q.created_at)+'</span>')+(isAdminUser()?adminDelBtn(q.id):"")+'</div>'+
       (q.title?'<h3 class="qtitle">'+esc(q.title)+'</h3>':"")+
       '<div class="qbody">'+esc(q.body)+'</div>'+
-      (qa.length?'<div class="answers">'+qa.map(function(a){return '<div class="ans"><div class="qhead">'+poster(a)+'<span class="qtime">'+timeAgo(a.created_at)+'</span></div><div class="qbody">'+esc(a.body)+'</div></div>';}).join("")+'</div>':"")+
+      (qa.length?'<div class="answers">'+qa.map(function(a){return '<div class="ans"><div class="qhead">'+poster(a)+'<span class="qtime">'+timeAgo(a.created_at)+'</span>'+(isAdminUser()?adminDelBtn(a.id):"")+'</div><div class="qbody">'+esc(a.body)+'</div></div>';}).join("")+'</div>':"")+
       (window.__USER?'<div class="answerbox" data-q="'+q.id+'"><button class="linkbtn ansOpen" data-q="'+q.id+'">Answer this</button></div>':"")+
     '</div>';
   }).join("");
   wireAuthLinks(list);
   list.querySelectorAll(".ansOpen").forEach(function(btn){btn.onclick=function(){openAnswer(btn.dataset.q,btn.closest(".answerbox"));};});
+  list.querySelectorAll(".delpost").forEach(function(btn){btn.onclick=function(){adminDeletePost(btn.dataset.del);};});
 }
 function openAnswer(qid,box){
   if(box.querySelector(".ansform")){box.querySelector(".ansform").remove();return;}
@@ -934,9 +961,10 @@ async function loadAdmin(){
     var posts=(await sbc.from("community_posts").select("*").eq("status","pending").order("created_at")).data||[];
     var profs=(await sbc.from("profiles").select("id,email,display_name,company,sme_note,photo_pending,photo_status,company_logo_pending,logo_status,sme_status").or("photo_status.eq.pending,sme_status.eq.pending,logo_status.eq.pending")).data||[];
     var tickets=(await sbc.from("feedback").select("*").order("created_at",{ascending:false})).data||[];
-    window.__profs=profs;
-    host.innerHTML=adminPostsHTML(posts)+adminApprovalsHTML(profs)+adminTicketsHTML(tickets);
-    wireAdmin();
+    var tnotes=(await sbc.from("feedback_notes").select("*").order("created_at")).data||[];
+    window.__profs=profs;window.__tickets=tickets;window.__tnotes=tnotes;
+    host.innerHTML=adminPostsHTML(posts)+adminApprovalsHTML(profs)+adminTicketsHTML();
+    wireAdmin();wireTickets();
   }catch(e){host.innerHTML='<div class="note">Couldn\'t load admin data: '+esc(String(e.message||e))+'</div>';}
 }
 function adminPostsHTML(posts){
@@ -956,12 +984,69 @@ function adminApprovalsHTML(profs){
   }).join("");
   return '<div class="asec"><h3>Pending photos, logos &amp; experts <span class="cnt">'+profs.length+'</span></h3>'+(profs.length?rows:'<p class="note">Nothing waiting.</p>')+'</div>';
 }
-function adminTicketsHTML(tickets){
-  var rows=tickets.map(function(t){
-    var imgs=(t.images&&t.images.length)?'<div class="tickimgs">'+t.images.map(function(u){return '<a href="'+esc(u)+'" target="_blank"><img src="'+esc(u)+'"></a>';}).join("")+'</div>':"";
-    return '<div class="acard"><div class="meta"><span class="tag">'+esc(t.category||"")+'</span> <span class="tag">'+esc(t.priority||"")+'</span> '+esc(t.email||"")+' · '+esc(new Date(t.created_at).toLocaleDateString())+(t.status==="resolved"?' <span class="tag ok">resolved</span>':"")+'</div><div class="abody">'+esc(t.message||"")+'</div>'+imgs+(t.admin_response?'<div class="aresp">↪ '+esc(t.admin_response)+'</div>':"")+'<div class="treply"><textarea placeholder="Reply to '+esc(t.email||"submitter")+'…"></textarea><label class="toggle"><input type="checkbox" class="temail" checked> Also email them</label><div class="aact"><button class="btn ok" data-act="reply" data-id="'+t.id+'" data-to="'+esc(t.email||"")+'">Send reply</button><button class="btn ghost" data-act="resolve" data-id="'+t.id+'">Mark resolved</button></div><div class="msg tmsg"></div></div></div>';
-  }).join("");
-  return '<div class="asec"><h3>Feedback tickets <span class="cnt">'+tickets.length+'</span></h3>'+(tickets.length?rows:'<p class="note">No tickets yet.</p>')+'</div>';
+window.__tfilter={status:"all",cat:"all"};
+function tStatus(t){var s=t.status||"open";return s==="new"?"open":s;}
+function statusMeta(s){return ({open:["Open","sb-open"],in_progress:["In progress","sb-prog"],resolved:["Resolved","sb-res"],closed:["Closed","sb-clo"]})[s]||["Open","sb-open"];}
+function adminTicketsHTML(){
+  var T=window.__tickets||[];
+  var open=T.filter(function(t){return tStatus(t)==="open";}).length;
+  var cats=[];T.forEach(function(t){if(t.category&&cats.indexOf(t.category)<0)cats.push(t.category);});
+  var stChips=[["all","All"],["open","Open"],["in_progress","In progress"],["resolved","Resolved"],["closed","Closed"]];
+  var sc=stChips.map(function(c){return '<button class="chip tf-st" data-st="'+c[0]+'" aria-pressed="'+(window.__tfilter.status===c[0])+'">'+c[1]+'</button>';}).join("");
+  var cc='<button class="chip tf-cat" data-cat="all" aria-pressed="'+(window.__tfilter.cat==="all")+'">All types</button>'+cats.map(function(c){return '<button class="chip tf-cat" data-cat="'+esc(c)+'" aria-pressed="'+(window.__tfilter.cat===c)+'">'+esc(c)+'</button>';}).join("");
+  return '<div class="asec"><h3>Feedback tickets <span class="cnt">'+open+' open / '+T.length+'</span></h3>'+
+    '<div class="tfilters"><div class="tfrow">'+sc+'</div><div class="tfrow">'+cc+'</div></div>'+
+    '<div id="tixList"></div></div>';
+}
+function ticketMatches(t){
+  if(window.__tfilter.status!=="all"&&tStatus(t)!==window.__tfilter.status)return false;
+  if(window.__tfilter.cat!=="all"&&(t.category||"")!==window.__tfilter.cat)return false;
+  return true;
+}
+function tixCard(t){
+  var sm=statusMeta(tStatus(t));
+  var notes=(window.__tnotes||[]).filter(function(n){return n.feedback_id===t.id;});
+  var imgs=(t.images&&t.images.length)?'<div class="tickimgs">'+t.images.map(function(u){return '<a href="'+esc(u)+'" target="_blank"><img src="'+esc(u)+'"></a>';}).join("")+'</div>':"";
+  var statusSel='<select class="tstatus" data-id="'+t.id+'">'+[["open","Open"],["in_progress","In progress"],["resolved","Resolved"],["closed","Closed"]].map(function(o){return '<option value="'+o[0]+'"'+(tStatus(t)===o[0]?" selected":"")+'>'+o[1]+'</option>';}).join("")+'</select>';
+  var prioSel='<select class="tprio" data-id="'+t.id+'">'+[["low","Low"],["normal","Normal"],["high","High"],["urgent","Urgent"]].map(function(o){return '<option value="'+o[0]+'"'+((t.priority||"normal")===o[0]?" selected":"")+'>'+o[1]+'</option>';}).join("")+'</select>';
+  var noteList=notes.length?'<div class="tnotes">'+notes.map(function(n){return '<div class="tnote">'+esc(n.note)+'<span class="tnt">'+esc((n.author_email||"").split("@")[0])+' · '+timeAgo(n.created_at)+'</span></div>';}).join("")+'</div>':"";
+  return '<div class="acard tix">'+
+    '<div class="tixhd"><span class="tixno">#'+(t.ticket_number||"?")+'</span> <span class="sbadge '+sm[1]+'">'+sm[0]+'</span> <span class="tag">'+esc(t.priority||"normal")+'</span> <span class="tag">'+esc(t.category||"")+'</span>'+(t.section?' <span class="tag">'+esc(t.section)+'</span>':"")+'</div>'+
+    '<div class="meta">'+esc(t.email||"")+' · '+esc(new Date(t.created_at).toLocaleString())+'</div>'+
+    '<div class="abody">'+esc(t.message||"")+'</div>'+imgs+
+    (t.admin_response?'<div class="aresp">↪ '+esc(t.admin_response)+'</div>':"")+
+    noteList+
+    '<div class="tctrl"><label>Status '+statusSel+'</label><label>Priority '+prioSel+'</label></div>'+
+    '<div class="tnoteadd"><input type="text" class="tninput" placeholder="Add internal note (admin only)…"><button class="btn ghost" data-act="addnote" data-id="'+t.id+'">Add note</button></div>'+
+    '<div class="treply"><textarea placeholder="Reply to '+esc(t.email||"submitter")+'…"></textarea><label class="toggle"><input type="checkbox" class="temail" checked> Also email them</label><div class="aact"><button class="btn ok" data-act="reply" data-id="'+t.id+'" data-to="'+esc(t.email||"")+'">Send reply</button></div><div class="msg tmsg"></div></div>'+
+  '</div>';
+}
+function fillTixList(){
+  var host=$("#tixList");if(!host)return;
+  var T=(window.__tickets||[]).filter(ticketMatches);
+  host.innerHTML=T.length?T.map(tixCard).join(""):'<p class="note">No tickets match these filters.</p>';
+  host.querySelectorAll('[data-act]').forEach(function(b){b.onclick=function(){adminAction(b.dataset.act,b.dataset.id,b);};});
+  host.querySelectorAll('select.tstatus').forEach(function(sel){sel.onchange=function(){setTicketField(sel.dataset.id,"status",sel.value);};});
+  host.querySelectorAll('select.tprio').forEach(function(sel){sel.onchange=function(){setTicketField(sel.dataset.id,"priority",sel.value);};});
+}
+function syncChips(){
+  document.querySelectorAll('.tf-st').forEach(function(b){b.setAttribute("aria-pressed",b.dataset.st===window.__tfilter.status);});
+  document.querySelectorAll('.tf-cat').forEach(function(b){b.setAttribute("aria-pressed",b.dataset.cat===window.__tfilter.cat);});
+}
+function wireTickets(){
+  document.querySelectorAll('.tf-st').forEach(function(b){b.onclick=function(){window.__tfilter.status=b.dataset.st;syncChips();fillTixList();};});
+  document.querySelectorAll('.tf-cat').forEach(function(b){b.onclick=function(){window.__tfilter.cat=b.dataset.cat;syncChips();fillTixList();};});
+  fillTixList();
+}
+async function refreshTickets(){
+  try{
+    window.__tickets=(await sbc.from("feedback").select("*").order("created_at",{ascending:false})).data||[];
+    window.__tnotes=(await sbc.from("feedback_notes").select("*").order("created_at")).data||[];
+    fillTixList();
+  }catch(e){}
+}
+async function setTicketField(id,field,val){
+  try{var patch={};patch[field]=val;if(field==="status"&&(val==="resolved"||val==="closed"))patch.responded_at=new Date().toISOString();await sbc.from("feedback").update(patch).eq("id",id);await refreshTickets();toast("Ticket #updated");}catch(e){toast("Update failed: "+(e.message||e));}
 }
 function wireAdmin(){
   document.querySelectorAll('#adminBody [data-act]').forEach(function(b){
@@ -978,7 +1063,7 @@ async function adminAction(act,id,btn){
     else if(act==="reject_logo"){await sbc.from("profiles").update({logo_status:"rejected",company_logo_pending:null}).eq("id",id);}
     else if(act==="approve_sme"){await sbc.from("profiles").update({is_sme:true,sme_status:"approved"}).eq("id",id);}
     else if(act==="reject_sme"){await sbc.from("profiles").update({sme_status:"rejected"}).eq("id",id);}
-    else if(act==="resolve"){await sbc.from("feedback").update({status:"resolved"}).eq("id",id);}
+    else if(act==="addnote"){var inp=btn.closest(".acard").querySelector(".tninput");var v=(inp&&inp.value.trim())||"";if(!v)return;await sbc.from("feedback_notes").insert({feedback_id:id,note:v,author_email:(window.__USER&&window.__USER.email)||null});if(inp)inp.value="";await refreshTickets();return;}
     else if(act==="reply"){await sendAdminReply(id,btn);return;}
     loadAdmin();
   }catch(e){toast("Action failed: "+(e.message||e));}
@@ -989,7 +1074,7 @@ async function sendAdminReply(id,btn){
   if(!text)return;
   btn.disabled=true;btn.innerHTML='<span class="spin"></span>';
   try{
-    await sbc.from("feedback").update({admin_response:text,responded_at:new Date().toISOString(),status:"resolved"}).eq("id",id);
+    await sbc.from("feedback").update({admin_response:text,responded_at:new Date().toISOString()}).eq("id",id);
     if(emailIt&&to){
       var r=await sbc.functions.invoke("reply-email",{body:{to:to,subject:"Re: your feedback on the EHS Hub",body:text}});
       var d=r.data||{};
@@ -997,6 +1082,7 @@ async function sendAdminReply(id,btn){
       else if(d.ok){msg.textContent="✓ Replied + emailed.";msg.className="msg ok tmsg";}
       else{msg.textContent="Saved in-app. Email error.";msg.className="msg err tmsg";}
     }else{msg.textContent="✓ Saved (in-app only).";msg.className="msg ok tmsg";}
+    if(typeof refreshTickets==="function"){setTimeout(refreshTickets,400);}
   }catch(e){msg.textContent="Failed: "+(e.message||e);msg.className="msg err tmsg";}
   btn.disabled=false;btn.textContent="Send reply";
 }
