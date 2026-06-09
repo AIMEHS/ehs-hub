@@ -1,0 +1,913 @@
+<!doctype html>
+<html lang="en" data-theme="aim">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EHS Compliance Hub — AIM™ EH&S</title>
+<meta name="description" content="A live EPA compliance command center for the people who file the report: Federal Register watch, reporting-deadline calendar, an ask-anything compliance assistant, EPA enforcement lookup, and current CFR rule text — tailored to your facility.">
+<style>
+:root{
+  --bg:#f5f7fb; --panel:#ffffff; --panel2:#fbfcfe; --ink:#16202e; --muted:#5d6b7e; --line:#e7ecf3;
+  --brand:#2563eb; --brand-ink:#ffffff; --accent:#0ea5e9; --good:#15a36a; --warn:#d98a00; --bad:#dc3a4b;
+  --chip:#eef2f8; --chip-ink:#33465c; --shadow:0 1px 2px rgba(16,32,54,.06),0 8px 24px rgba(16,32,54,.06);
+  --radius:14px; --font:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+  --glow:none;
+}
+html[data-theme="dark"]{
+  --bg:#0b0f17; --panel:#121a27; --panel2:#0f1623; --ink:#e9eef7; --muted:#95a4ba; --line:#223047;
+  --brand:#3b82f6; --brand-ink:#fff; --accent:#22d3ee; --good:#34d399; --warn:#fbbf24; --bad:#f87171;
+  --chip:#1b2738; --chip-ink:#aebed4; --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.35);
+}
+html[data-theme="aim"]{
+  --bg:#13161b; --panel:#1c2128; --panel2:#171b21; --ink:#eef1f5; --muted:#9aa4af; --line:#2b323c;
+  --brand:#e24751; --brand-ink:#fff; --accent:#e24751; --good:#37c98a; --warn:#e0a32a; --bad:#e24751;
+  --chip:#252c35; --chip-ink:#c2cad3; --shadow:0 1px 2px rgba(0,0,0,.45),0 10px 30px rgba(0,0,0,.4);
+}
+html[data-theme="cyber"]{
+  --bg:#08010f; --panel:#15012e; --panel2:#10002340; --ink:#f7e9ff; --muted:#c49bef; --line:#46108a;
+  --brand:#ff2bd6; --brand-ink:#0a0014; --accent:#16f0ff; --good:#39ff14; --warn:#ffe600; --bad:#ff3860;
+  --chip:#26044d; --chip-ink:#e7c6ff; --shadow:0 0 0 1px rgba(255,43,214,.25),0 10px 40px rgba(22,240,255,.12);
+  --glow:0 0 8px rgba(22,240,255,.55);
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);-webkit-font-smoothing:antialiased}
+body{line-height:1.5;font-size:15px}
+html[data-theme="cyber"] body{background-image:repeating-linear-gradient(0deg,rgba(22,240,255,.035) 0 2px,transparent 2px 4px)}
+a{color:var(--brand)}
+h1,h2,h3{margin:0;font-weight:700;letter-spacing:-.01em}
+.wrap{max-width:1080px;margin:0 auto;padding:0 18px}
+/* header */
+header.top{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--panel) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.topbar{display:flex;align-items:center;gap:14px;height:60px}
+.brand{display:flex;align-items:center;gap:9px;font-weight:800;letter-spacing:.02em;font-size:17px;text-shadow:var(--glow)}
+.brand .dot{width:11px;height:11px;border-radius:3px;background:var(--brand);box-shadow:var(--glow)}
+.brand b{color:var(--brand)}
+.spacer{flex:1}
+.cta{background:var(--brand);color:var(--brand-ink);border:0;border-radius:10px;padding:9px 14px;font-weight:700;font-size:13px;cursor:pointer;text-decoration:none;box-shadow:var(--glow)}
+.cta:hover{filter:brightness(1.06)}
+.themebtn{position:relative}
+.themebtn button{background:var(--chip);color:var(--chip-ink);border:1px solid var(--line);border-radius:10px;padding:8px 11px;font-weight:600;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:7px}
+.thememenu{position:absolute;right:0;top:46px;background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);padding:6px;min-width:190px;display:none}
+.thememenu.open{display:block}
+.thememenu div{padding:9px 11px;border-radius:8px;cursor:pointer;font-size:13.5px;font-weight:600;display:flex;align-items:center;gap:9px}
+.thememenu div:hover{background:var(--chip)}
+.swatch{width:14px;height:14px;border-radius:4px;border:1px solid rgba(125,125,125,.3)}
+/* tabs */
+.tabs{display:flex;gap:4px;overflow-x:auto;border-bottom:1px solid var(--line);background:var(--panel)}
+.tabs.wrap2{max-width:1080px;margin:0 auto;padding:0 10px}
+.tab{flex:0 0 auto;padding:13px 15px;font-weight:650;font-size:14px;color:var(--muted);border:0;background:none;cursor:pointer;border-bottom:2.5px solid transparent;white-space:nowrap}
+.tab[aria-selected="true"]{color:var(--brand);border-bottom-color:var(--brand);text-shadow:var(--glow)}
+.tab:hover{color:var(--ink)}
+/* layout */
+main{padding:22px 0 60px}
+.panel{display:none}
+.panel.active{display:block;animation:fade .25s ease}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.hero h1{font-size:26px;margin-bottom:6px;text-shadow:var(--glow)}
+.hero p{color:var(--muted);margin:0 0 18px;max-width:680px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+.sec-h{display:flex;align-items:center;gap:10px;margin:26px 0 12px}
+.sec-h h2{font-size:14px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted)}
+.sec-h .live{margin-left:auto;display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:800;color:var(--good);letter-spacing:.06em}
+.sec-h .live i{width:8px;height:8px;border-radius:50%;background:var(--good);box-shadow:0 0 0 0 var(--good);animation:pulse 1.8s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--good) 60%,transparent)}70%{box-shadow:0 0 0 7px transparent}100%{box-shadow:0 0 0 0 transparent}}
+/* deadline cards */
+.cal{display:grid;grid-template-columns:repeat(auto-fill,minmax(248px,1fr));gap:12px}
+.dl{display:flex;gap:13px;padding:15px;align-items:flex-start}
+.dl .cd{flex:0 0 auto;width:62px;text-align:center;border-radius:11px;padding:9px 4px;background:var(--chip)}
+.dl .cd .n{font-size:23px;font-weight:800;line-height:1}
+.dl .cd .u{font-size:9.5px;font-weight:800;letter-spacing:.1em;color:var(--muted);text-transform:uppercase}
+.dl.u-red .cd{background:color-mix(in srgb,var(--bad) 16%,var(--panel));color:var(--bad)}
+.dl.u-amber .cd{background:color-mix(in srgb,var(--warn) 18%,var(--panel));color:var(--warn)}
+.dl.u-green .cd{background:color-mix(in srgb,var(--good) 15%,var(--panel));color:var(--good)}
+.dl .nm{font-weight:700;font-size:14.5px;margin-bottom:3px}
+.dl .mt{font-size:12px;color:var(--muted)}
+.dl .dt{font-size:12px;font-weight:700;margin-top:6px}
+.dl a{font-size:12px}
+/* filters */
+.filters{display:flex;flex-wrap:wrap;gap:7px;align-items:center;margin:4px 0 14px}
+.chip{background:var(--chip);color:var(--chip-ink);border:1px solid transparent;border-radius:999px;padding:6px 12px;font-size:12.5px;font-weight:600;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--brand);color:var(--brand-ink);box-shadow:var(--glow)}
+.filters .sep{width:1px;height:20px;background:var(--line);margin:0 3px}
+.toggle{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:600;cursor:pointer;color:var(--muted)}
+.toggle input{accent-color:var(--brand);width:16px;height:16px}
+.count{margin-left:auto;font-size:12.5px;color:var(--muted)}
+/* feed */
+.feed{display:flex;flex-direction:column;gap:12px}
+.up{padding:16px 17px}
+.up .row1{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:7px}
+.badge{font-size:10px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;padding:3px 8px;border-radius:6px}
+.b-high{background:color-mix(in srgb,var(--bad) 18%,var(--panel));color:var(--bad)}
+.b-med{background:color-mix(in srgb,var(--warn) 18%,var(--panel));color:var(--warn)}
+.b-low{background:var(--chip);color:var(--chip-ink)}
+.up .type{font-size:11.5px;color:var(--muted);font-weight:600}
+.up .meta{font-size:11.5px;color:var(--muted);margin-left:auto}
+.up h3{font-size:16px;margin:2px 0 9px;line-height:1.32}
+.up .sum{font-size:13.5px;color:var(--ink)}
+.up .sum b{color:var(--muted);font-weight:700}
+.up .sum p{margin:5px 0}
+.up .tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.tag{font-size:11px;background:var(--chip);color:var(--chip-ink);padding:3px 8px;border-radius:6px;font-weight:600}
+.up .src{display:inline-block;margin-top:11px;font-size:12.5px;font-weight:700}
+.due{margin-top:9px;font-size:12px;font-weight:700;color:var(--warn);background:color-mix(in srgb,var(--warn) 12%,var(--panel));display:inline-block;padding:4px 9px;border-radius:7px}
+/* tools (ask / enf / rules / facility) */
+.tool{padding:20px}
+.tool h2{font-size:19px;margin-bottom:4px}
+.tool .lead{color:var(--muted);margin:0 0 16px;font-size:13.5px}
+.field{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+.field label{font-size:12.5px;font-weight:700;color:var(--muted)}
+input[type=text],input[type=number],textarea,select{width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:11px 12px;color:var(--ink);font:inherit;font-size:14px}
+textarea{min-height:74px;resize:vertical}
+input:focus,textarea:focus,select:focus{outline:2px solid color-mix(in srgb,var(--brand) 45%,transparent);border-color:var(--brand)}
+.btn{background:var(--brand);color:var(--brand-ink);border:0;border-radius:10px;padding:11px 18px;font-weight:700;font-size:14px;cursor:pointer;box-shadow:var(--glow)}
+.btn:disabled{opacity:.55;cursor:default}
+.btn.ghost{background:var(--chip);color:var(--chip-ink)}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.row>.field{flex:1;min-width:130px}
+.answer{margin-top:16px;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:16px;font-size:14px;display:none}
+.answer.show{display:block}
+.answer h4{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:8px}
+.srcs{margin-top:12px;display:flex;flex-direction:column;gap:6px}
+.srcs a{font-size:12.5px;display:flex;gap:7px;align-items:baseline}
+.cfrtext{white-space:pre-wrap;font-size:13.5px;line-height:1.55;max-height:440px;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px;margin-top:6px}
+.efac{padding:13px 14px;border:1px solid var(--line);border-radius:11px;margin-bottom:9px;background:var(--panel2)}
+.efac .en{font-weight:700;font-size:14px}
+.efac .em{font-size:12px;color:var(--muted);margin-top:2px}
+.efac .ep{display:flex;gap:14px;flex-wrap:wrap;margin-top:7px;font-size:12px}
+.efac .ep span b{color:var(--ink)}
+.note{font-size:12px;color:var(--muted);margin-top:10px}
+.spin{display:inline-block;width:15px;height:15px;border:2px solid color-mix(in srgb,var(--brand-ink) 60%,transparent);border-top-color:var(--brand-ink);border-radius:50%;animation:sp .7s linear infinite;vertical-align:-2px}
+@keyframes sp{to{transform:rotate(360deg)}}
+.chkgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px}
+.chk{display:flex;align-items:center;gap:8px;font-size:13px;background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:8px 10px;cursor:pointer}
+.chk input{accent-color:var(--brand)}
+.saved{font-size:12.5px;color:var(--good);font-weight:700;margin-left:10px;opacity:0;transition:opacity .2s}
+.saved.show{opacity:1}
+.fbanner{background:color-mix(in srgb,var(--brand) 9%,var(--panel));border:1px solid color-mix(in srgb,var(--brand) 30%,var(--line));border-radius:11px;padding:11px 14px;font-size:13px;margin-bottom:16px;display:flex;gap:9px;align-items:center}
+.disc{margin-top:26px;font-size:12px;color:var(--muted);background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:14px 16px;line-height:1.6}
+footer{border-top:1px solid var(--line);padding:18px 0;color:var(--muted);font-size:12.5px;text-align:center}
+.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);background:var(--panel);border:1px solid var(--brand);color:var(--ink);padding:12px 18px;border-radius:12px;box-shadow:var(--shadow);font-weight:700;opacity:0;pointer-events:none;transition:.3s;z-index:80;text-shadow:var(--glow)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.empty{color:var(--muted);padding:26px;text-align:center}
+.cta .cta-sm{display:none}
+@media(max-width:560px){.hero h1{font-size:22px}.topbar{height:auto;min-height:54px;gap:6px;padding:7px 0}.brand{font-size:14px}.cta{padding:8px 10px}.cta .cta-lg{display:none}.cta .cta-sm{display:inline}.themebtn #themeName{display:none}.themebtn button{padding:8px 9px}.linkbtn{padding:7px 9px;font-size:12px}.acct{gap:5px}.acct .who{max-width:74px}.sec-h .live{font-size:10px}}
+/* accounts + feedback + rule customization */
+.acct{display:flex;align-items:center;gap:6px}
+.acct .who{font-size:12.5px;color:var(--muted);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.linkbtn{background:var(--chip);border:1px solid var(--line);color:var(--ink);font:inherit;font-weight:650;font-size:13px;cursor:pointer;padding:8px 12px;border-radius:10px}
+.linkbtn:hover{border-color:var(--brand)}
+.modal-bg{position:fixed;inset:0;background:rgba(8,12,20,.55);backdrop-filter:blur(3px);z-index:90;display:none;align-items:center;justify-content:center;padding:18px}
+.modal-bg.open{display:flex}
+.modal{background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);width:min(380px,100%);padding:22px;position:relative}
+.modal h3{font-size:18px;margin-bottom:3px}
+.modal .sub{color:var(--muted);font-size:13px;margin-bottom:15px}
+.modal .x{position:absolute;top:14px;right:16px;background:none;border:0;color:var(--muted);font-size:22px;cursor:pointer;line-height:1}
+.modal .msg{font-size:12.5px;margin:2px 0 10px;padding:9px 11px;border-radius:9px;display:none}
+.modal .msg.err{display:block;background:color-mix(in srgb,var(--bad) 14%,var(--panel));color:var(--bad)}
+.modal .msg.ok{display:block;background:color-mix(in srgb,var(--good) 14%,var(--panel));color:var(--good)}
+.modal .alt{display:flex;justify-content:space-between;margin-top:13px;font-size:12.5px}
+.modal .alt button{background:none;border:0;color:var(--brand);font:inherit;font-weight:600;cursor:pointer;padding:0}
+.fbtn{position:fixed;right:20px;bottom:20px;z-index:70;display:flex;align-items:center;gap:8px;background:var(--brand);color:var(--brand-ink);border:0;border-radius:999px;padding:12px 17px;font-weight:700;font-size:14px;cursor:pointer;box-shadow:0 6px 20px rgba(0,0,0,.18),var(--glow)}
+.fbtn:hover{filter:brightness(1.06)}
+.fpop{position:fixed;right:20px;bottom:76px;z-index:71;width:min(23rem,calc(100vw - 40px));background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);display:none;overflow:hidden}
+.fpop.open{display:block}
+.fpop .fh{display:flex;align-items:center;justify-content:space-between;padding:12px 15px;border-bottom:1px solid var(--line)}
+.fpop .fh h3{font-size:14px}
+.fpop .fh button{background:none;border:0;color:var(--muted);font-size:18px;cursor:pointer;line-height:1}
+.fpop form{padding:14px;display:flex;flex-direction:column;gap:11px}
+.fpop .frow{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.fgate{padding:20px 16px;text-align:center;font-size:13.5px;color:var(--muted)}
+.up .actions{display:flex;align-items:center;gap:7px;margin-top:11px;flex-wrap:wrap}
+.up .actions .src{margin:0}
+.icbtn{background:var(--chip);border:1px solid transparent;border-radius:8px;padding:4px 9px;font-size:12px;font-weight:600;cursor:pointer;color:var(--chip-ink);margin-left:auto}
+.icbtn+.icbtn{margin-left:0}
+.icbtn:hover{border-color:var(--line)}
+.icbtn.on{background:var(--brand);color:var(--brand-ink)}
+.up.ackd{opacity:.62}
+.up.pinned{box-shadow:0 0 0 2px color-mix(in srgb,var(--brand) 50%,transparent),var(--shadow)}
+.pinflag{font-size:10px;font-weight:800;color:var(--brand);letter-spacing:.05em;text-transform:uppercase}
+
+/* community + profiles + admin */
+.avatar{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;background:var(--chip);color:var(--chip-ink);font-weight:800;font-size:13px;overflow:hidden;flex:0 0 auto}
+.avatar img{width:100%;height:100%;object-fit:cover}
+.avatar.lg{width:54px;height:54px;font-size:20px}
+.avatar.xl{width:64px;height:64px;font-size:24px}
+.bluecheck{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;background:#1d9bf0;color:#fff;font-size:10px;font-weight:900;vertical-align:middle}
+.psr{display:inline-flex;align-items:center;gap:8px;font-size:13.5px}
+.psr b{font-weight:700}.psr .authlink{cursor:pointer}.psr .authlink:hover{color:var(--brand)}
+.qpost{padding:16px 17px;margin-bottom:12px}
+.qpost.pend{opacity:.9;border-style:dashed}
+.qhead{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.qtime{margin-left:auto;font-size:11.5px;color:var(--muted)}
+.pendtag{margin-left:auto;font-size:10.5px;font-weight:800;color:var(--warn);background:color-mix(in srgb,var(--warn) 15%,var(--panel));padding:3px 8px;border-radius:6px;text-transform:uppercase;letter-spacing:.04em}
+.qtitle{font-size:16px;margin:2px 0 7px}
+.qbody{font-size:13.5px;white-space:pre-wrap}
+.answers{margin-top:12px;border-top:1px solid var(--line);padding-top:10px;display:flex;flex-direction:column;gap:10px}
+.ans{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:11px 12px}
+.answerbox{margin-top:10px}
+.ansform{margin-top:8px;display:flex;flex-direction:column;gap:7px}
+.pbig{display:flex;align-items:center;gap:14px;margin-bottom:10px}
+.pname{font-size:17px;font-weight:800}
+.smetag{font-size:11px;font-weight:800;color:#1d9bf0}
+.pcompany{font-size:13px;color:var(--muted)}
+.pbio{font-size:14px;white-space:pre-wrap}
+.smebox{margin-top:14px;background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:13px}
+.smebox textarea{margin-top:6px}
+.lbl{font-size:12.5px;font-weight:700;color:var(--muted);display:block;margin-bottom:4px}
+.fthumbs{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.fthumb img,.tickimgs img,.athumb{width:54px;height:54px;border-radius:8px;object-fit:cover;border:1px solid var(--line)}
+.tickimgs{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.asec{margin-bottom:24px}
+.asec h3{font-size:14px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:10px}
+.asec .cnt{background:var(--brand);color:var(--brand-ink);border-radius:999px;padding:1px 8px;font-size:11px;margin-left:6px}
+.acard{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:10px;box-shadow:var(--shadow)}
+.acard .meta{font-size:12px;color:var(--muted);margin-bottom:6px}
+.atitle{font-weight:700;margin-bottom:4px}
+.abody{font-size:13.5px;white-space:pre-wrap;margin-bottom:8px}
+.aact{display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap}
+.aact .btn{padding:8px 14px;font-size:13px}
+.btn.ok{background:var(--good)}
+.aprow{display:flex;align-items:center;gap:12px;padding:8px 0;border-top:1px solid var(--line);flex-wrap:wrap}
+.aprow>span:first-child{font-size:13px;font-weight:600;min-width:110px}
+.aresp{background:color-mix(in srgb,var(--good) 10%,var(--panel));border-radius:8px;padding:8px 10px;font-size:13px;margin:8px 0}
+.treply{margin-top:10px;border-top:1px solid var(--line);padding-top:10px}
+.tag{font-size:10.5px;background:var(--chip);color:var(--chip-ink);padding:2px 7px;border-radius:5px;font-weight:700;display:inline-block}
+.tag.ok{background:var(--good);color:#fff}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+<header class="top">
+  <div class="wrap topbar">
+    <div class="brand"><span class="dot"></span><b>AIM™&nbsp;EH&amp;S</b>&nbsp;Hub</div>
+    <div class="spacer" style="flex:1"></div>
+    <div class="themebtn">
+      <button id="themeToggle">◑ <span id="themeName">Light</span> ▾</button>
+      <div class="thememenu" id="themeMenu"></div>
+    </div>
+    <div class="acct" id="acct"><button class="linkbtn" id="signinBtn">Sign in</button></div>
+    <a class="cta" href="https://aim-env.com/ehs-hub/" target="_blank" rel="noopener"><span class="cta-lg">Get deadline alerts →</span><span class="cta-sm">Alerts →</span></a>
+  </div>
+  <div class="tabs"><div class="tabs wrap2" id="tabs"></div></div>
+</header>
+
+<main class="wrap">
+  <!-- DASHBOARD -->
+  <section class="panel active" id="p-dashboard">
+    <div class="hero">
+      <h1>EHS Compliance Command Center</h1>
+      <p>What changed, what's due, and what to do about it — for the people who actually file the report. Federal Register rule changes in plain English, a live reporting-deadline calendar, and tools to check enforcement, look up rule text, and ask compliance questions. Updated daily.</p>
+    </div>
+    <div id="facBanner"></div>
+
+    <div class="sec-h"><h2>Upcoming compliance deadlines</h2></div>
+    <div class="cal" id="cal"><div class="empty">Loading deadlines…</div></div>
+
+    <div class="sec-h"><h2>Federal Register watch — what changed</h2><span class="live"><i></i>LIVE</span></div>
+    <div class="filters" id="filters"></div>
+    <div class="feed" id="feed"><div class="empty">Loading from the Federal Register…</div></div>
+  </section>
+
+  <!-- ASK THE HUB -->
+  <section class="panel" id="p-ask">
+  <div class="hero" style="margin-bottom:6px"><h1>EHS Community</h1><p>Ask the questions you can't Google — permit edge cases, Method 21 gotchas, reporting headaches — and get answers from other EHS pros and verified experts. Every post is reviewed before it's public, so it stays useful and on-topic.</p></div>
+  <div id="commGate"></div>
+  <div id="commList"><div class="empty">Loading the conversation…</div></div>
+</section>
+
+  <!-- ENFORCEMENT -->
+  <section class="panel" id="p-enf">
+    <div class="card tool">
+      <h2>Enforcement watch</h2>
+      <p class="lead">See recent EPA inspections, violations, and penalties from EPA's ECHO database — situational awareness on who's getting hit in your state and industry.</p>
+      <div class="row">
+        <div class="field" style="max-width:160px"><label>State</label><select id="enfState"></select></div>
+        <div class="field" style="max-width:180px"><label>NAICS code (optional)</label><input type="text" id="enfNaics" placeholder="e.g. 324110"></div>
+        <div class="field" style="max-width:200px;justify-content:flex-end"><label class="toggle"><input type="checkbox" id="enfMajor"> Major facilities only</label></div>
+      </div>
+      <button class="btn" id="enfBtn">Search ECHO</button>
+      <div class="answer" id="enfA"></div>
+    </div>
+  </section>
+
+  <!-- RULE LOOKUP -->
+  <section class="panel" id="p-rules">
+    <div class="card tool">
+      <h2>Rule-text lookup</h2>
+      <p class="lead">Pull the current text of any Code of Federal Regulations citation straight from the official eCFR — so the Hub is also a fast reference, not just a news feed.</p>
+      <div class="row">
+        <div class="field" style="max-width:110px"><label>Title</label><input type="number" id="rTitle" value="40"></div>
+        <div class="field" style="max-width:130px"><label>Part</label><input type="text" id="rPart" placeholder="98"></div>
+        <div class="field" style="max-width:150px"><label>Section (optional)</label><input type="text" id="rSec" placeholder="98.2"></div>
+        <div class="field" style="max-width:150px"><label>Subpart (optional)</label><input type="text" id="rSub" placeholder="W"></div>
+      </div>
+      <div class="filters" style="margin-top:0">
+        <span class="note" style="margin:0 6px 0 0">Quick:</span>
+        <button class="chip" data-cfr="40|98||W">40 CFR 98 Subpart W (GHG)</button>
+        <button class="chip" data-cfr="40|60|60.18|">NSPS Gen'l (60.18)</button>
+        <button class="chip" data-cfr="40|63||">NESHAP (Part 63)</button>
+        <button class="chip" data-cfr="40|260||">RCRA (Part 260)</button>
+      </div>
+      <button class="btn" id="rBtn">Look up rule text</button>
+      <div class="answer" id="rA"></div>
+    </div>
+  </section>
+
+  <!-- MY FACILITY -->
+  <section class="panel" id="p-fac">
+    <div class="card tool" style="margin-bottom:14px"><h2>My profile</h2><p class="lead">Your name, photo, and expert status in the community.</p><div id="profileSection"></div></div>
+    <div class="card tool">
+      <h2>My facility</h2>
+      <p class="lead">Tell the Hub a little about your operation. It stays on this device (nothing is sent anywhere) and is used to tailor the feed and prefill the tools to what applies to you.</p>
+      <div class="field"><label>State</label><select id="facState" style="max-width:200px"></select></div>
+      <div class="field"><label>Facility type</label>
+        <select id="facType" style="max-width:280px">
+          <option value="">— select —</option>
+          <option>Refinery</option><option>Chemical / SOCMI plant</option><option>Oil &amp; gas production / midstream</option>
+          <option>Power generation</option><option>Manufacturing</option><option>Cement / minerals</option>
+          <option>Waste / TSDF</option><option>Other industrial</option>
+        </select>
+      </div>
+      <div class="field"><label>Programs &amp; sectors that apply to you</label>
+        <div class="chkgrid" id="facSectors"></div>
+      </div>
+      <div style="display:flex;align-items:center"><button class="btn" id="facSave">Save profile</button><span class="saved" id="facSaved">Saved ✓</span>
+      <button class="btn ghost" id="facClear" style="margin-left:auto">Clear</button></div>
+    </div>
+  </section>
+
+  <section class="panel" id="p-admin">
+      <div class="hero" style="margin-bottom:6px"><h1>Admin console</h1><p>Approve community posts, profile photos, expert verifications and logos, and respond to feedback tickets.</p></div>
+      <div id="adminBody"><div class="empty">Loading…</div></div>
+    </section>
+
+  <div class="disc" id="disc">
+    <b>How to read this:</b> Summaries distill the official abstract for orientation — not legal advice. The assistant and rule-lookup tools surface information to help you find the rule faster; they don't replace it. Deadlines shown are well-known federal statutory dates; <b>your facility's actual obligations and dates depend on your permits, your state program, and the current rule.</b> Always verify against the <b>primary source</b> — the linked Federal Register document and the governing CFR text at eCFR.gov. Enforcement data is from EPA's ECHO; regulations change, so confirm current requirements before acting.
+  </div>
+</main>
+
+<footer>© <span id="yr"></span> Atmospheric Integrity Management, LLC · AIM™ Environmental Health &amp; Safety · <a href="https://aim-env.com" target="_blank" rel="noopener">aim-env.com</a></footer>
+<div class="toast" id="toast"></div>
+
+<div class="modal-bg" id="authBg">
+  <div class="modal">
+    <button class="x" id="authClose" aria-label="Close">×</button>
+    <h3 id="authTitle">Sign in</h3>
+    <div class="sub" id="authSub">Sign in to leave feedback and save your facility settings.</div>
+    <div class="msg" id="authMsg"></div>
+    <div class="field"><label>Email</label><input type="text" id="authEmail" autocomplete="email" placeholder="you@company.com"></div>
+    <div class="field" id="pwField"><label>Password</label><input type="password" id="authPw" autocomplete="current-password" placeholder="••••••••"></div>
+    <button class="btn" id="authSubmit" style="width:100%">Sign in</button>
+    <div class="alt"><button id="toSignup">Create an account</button><button id="toForgot">Forgot password?</button></div>
+  </div>
+</div>
+
+<div class="modal-bg" id="profBg"><div class="modal"><button class="x" id="profClose" aria-label="Close">×</button><div id="profBody"></div></div></div>
+
+<button class="fbtn" id="fbtn" aria-label="Send feedback">
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+  <span>Feedback</span>
+</button>
+<div class="fpop" id="fpop">
+  <div class="fh"><h3>Send feedback</h3><button id="fclose" aria-label="Close">×</button></div>
+  <div id="fbody"></div>
+</div>
+
+<script>
+const SB="https://xnaseutcmkgukphslpkv.supabase.co";
+const KEY="sb_publishable_lCOPszJ0265YQdAgWtPJjw_xZMdpDXf";
+const HDRS={apikey:KEY,Authorization:"Bearer "+KEY,"Content-Type":"application/json"};
+const FN=SB+"/functions/v1/";
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const SECTORS=["GHG","Oil & Gas","Refinery","Chemical / SOCMI","NESHAP / MACT","Title V","Air permitting","RCRA / Waste","EPCRA / TRI","Regional"];
+const STATES="AL AK AZ AR CA CO CT DE FL GA HI ID IL IN IA KS KY LA ME MD MA MI MN MS MO MT NE NV NH NJ NM NY NC ND OH OK OR PA RI SC SD TN TX UT VT VA WA WV WI WY DC".split(" ");
+function esc(s){return (s==null?"":String(s)).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+function mdLite(s){s=esc(s);s=s.replace(/\*\*(.+?)\*\*/g,"<strong>$1</strong>");s=s.replace(/(https?:\/\/[^\s<)\]]+)/g,'<a href="$1" target="_blank" rel="noopener">link↗</a>');s=s.replace(/^#{1,6}\s*(.+)$/gm,'<strong>$1</strong>');s=s.replace(/\n/g,"<br>");return s;}
+function toast(t){const e=$("#toast");e.textContent=t;e.classList.add("show");setTimeout(()=>e.classList.remove("show"),2600);}
+$("#yr").textContent=new Date().getFullYear();
+
+/* ---------- THEME SYSTEM ---------- */
+const THEMES=[{id:"light",name:"Light",sw:"#2563eb"},{id:"dark",name:"Dark command-center",sw:"#22d3ee"},{id:"aim",name:"AIM brand",sw:"#e24751"}];
+const CYBER={id:"cyber",name:"⚡ Cyberpunk 80s",sw:"#ff2bd6"};
+function cyberUnlocked(){return localStorage.getItem("hubCyber")==="1";}
+function availThemes(){return cyberUnlocked()?[...THEMES,CYBER]:THEMES.slice();}
+function applyTheme(id){document.documentElement.dataset.theme=id;localStorage.setItem("hubTheme",id);const t=[...THEMES,CYBER].find(x=>x.id===id)||THEMES[0];$("#themeName").textContent=t.name.replace("⚡ ","");renderThemeMenu();}
+function renderThemeMenu(){const m=$("#themeMenu");const cur=document.documentElement.dataset.theme;m.innerHTML=availThemes().map(t=>`<div data-t="${t.id}"><span class="swatch" style="background:${t.sw}"></span>${t.name}${t.id===cur?" ✓":""}</div>`).join("");$$("#themeMenu div").forEach(d=>d.onclick=()=>{applyTheme(d.dataset.t);m.classList.remove("open");});}
+$("#themeToggle").onclick=e=>{e.stopPropagation();$("#themeMenu").classList.toggle("open");};
+document.addEventListener("click",()=>$("#themeMenu").classList.remove("open"));
+applyTheme(localStorage.getItem("hubTheme")&&([...THEMES,CYBER].some(t=>t.id===localStorage.getItem("hubTheme")))?localStorage.getItem("hubTheme"):"aim");
+function unlockCyber(){if(cyberUnlocked())return;localStorage.setItem("hubCyber","1");renderThemeMenu();applyTheme("cyber");toast("⚡ SECRET THEME UNLOCKED");}
+/* Konami (desktop) */
+const KONAMI=["ArrowUp","ArrowUp","ArrowDown","ArrowDown","ArrowLeft","ArrowRight","ArrowLeft","ArrowRight","b","a","Enter"];
+let kpos=0;
+document.addEventListener("keydown",e=>{const k=e.key.length===1?e.key.toLowerCase():e.key;if(k===KONAMI[kpos]){kpos++;if(kpos===KONAMI.length){kpos=0;unlockCyber();}}else{kpos=(k===KONAMI[0])?1:0;}});
+/* Konami (mobile swipes): up up down down left right left right */
+const SWIPE=["U","U","D","D","L","R","L","R"];let spos=0,tx=0,ty=0;
+document.addEventListener("touchstart",e=>{const t=e.changedTouches[0];tx=t.screenX;ty=t.screenY;},{passive:true});
+document.addEventListener("touchend",e=>{const t=e.changedTouches[0];const dx=t.screenX-tx,dy=t.screenY-ty;if(Math.max(Math.abs(dx),Math.abs(dy))<28)return;let d=Math.abs(dx)>Math.abs(dy)?(dx>0?"R":"L"):(dy>0?"D":"U");if(d===SWIPE[spos]){spos++;if(spos===SWIPE.length){spos=0;unlockCyber();}}else{spos=(d===SWIPE[0])?1:0;}},{passive:true});
+
+/* ---------- TABS ---------- */
+const TABS=[["dashboard","Dashboard"],["ask","Community"],["enf","Enforcement"],["rules","Rule lookup"],["fac","My account"]];
+$("#tabs").innerHTML=TABS.map((t,i)=>`<button class="tab" role="tab" data-p="${t[0]}" aria-selected="${i===0}">${t[1]}</button>`).join("");
+$$(".tab").forEach(b=>b.onclick=()=>{$$(".tab").forEach(x=>x.setAttribute("aria-selected","false"));b.setAttribute("aria-selected","true");$$(".panel").forEach(p=>p.classList.remove("active"));$("#p-"+b.dataset.p).classList.add("active");window.scrollTo({top:0,behavior:"smooth"});});
+
+/* ---------- FACILITY PROFILE ---------- */
+function loadFac(){try{return JSON.parse(localStorage.getItem("hubFacility")||"{}");}catch(e){return {};}}
+function saveFac(f){localStorage.setItem("hubFacility",JSON.stringify(f));}
+function buildStateOpts(sel,val){sel.innerHTML='<option value="">—</option>'+STATES.map(s=>`<option ${s===val?"selected":""}>${s}</option>`).join("");}
+buildStateOpts($("#facState"),loadFac().state||"");
+buildStateOpts($("#enfState"),loadFac().state||"");
+$("#facSectors").innerHTML=SECTORS.map(s=>`<label class="chk"><input type="checkbox" value="${esc(s)}"> ${esc(s)}</label>`).join("");
+function paintFacForm(){const f=loadFac();$("#facState").value=f.state||"";$("#facType").value=f.type||"";$$("#facSectors input").forEach(c=>c.checked=(f.sectors||[]).includes(c.value));}
+paintFacForm();
+$("#facSave").onclick=()=>{const f={state:$("#facState").value,type:$("#facType").value,sectors:$$("#facSectors input:checked").map(c=>c.value)};saveFac(f);$("#facSaved").classList.add("show");setTimeout(()=>$("#facSaved").classList.remove("show"),1800);buildStateOpts($("#enfState"),f.state||"");renderFacBanner();renderFeed();if($("#persToggle"))$("#persToggle").checked=(f.sectors||[]).length>0;if(window.__USER)saveProfileToAccount();};
+$("#facClear").onclick=()=>{localStorage.removeItem("hubFacility");paintFacForm();renderFacBanner();renderFeed();toast("Profile cleared");};
+function renderFacBanner(){const f=loadFac();const b=$("#facBanner");if((f.sectors&&f.sectors.length)||f.state||f.type){b.innerHTML=`<div class="fbanner">✓ Personalized for <b>&nbsp;${esc(f.type||"your facility")}${f.state?" · "+esc(f.state):""}</b>${f.sectors&&f.sectors.length?" — "+f.sectors.length+" program(s)":""}. <a href="#" id="editFac" style="margin-left:auto">Edit</a></div>`;$("#editFac").onclick=e=>{e.preventDefault();$$('.tab').forEach(x=>x.setAttribute("aria-selected","false"));[...$$('.tab')].find(t=>t.dataset.p==="fac").setAttribute("aria-selected","true");$$(".panel").forEach(p=>p.classList.remove("active"));$("#p-fac").classList.add("active");};}else{b.innerHTML="";}}
+renderFacBanner();
+
+/* ---------- DATA: deadlines + feed ---------- */
+let UPDATES=[],activeSectors=new Set(),activeImpact="All",personalize=(loadFac().sectors||[]).length>0;
+function daysTo(d){return Math.ceil((new Date(d+"T00:00:00")-new Date())/86400000);}
+async function loadDeadlines(){
+  try{const r=await fetch(SB+"/rest/v1/deadlines?select=*",{headers:HDRS});const d=await r.json();
+    const rows=d.map(x=>{let date=x.fixed_date;if(!date&&x.month&&x.day){let y=new Date().getFullYear();let dt=new Date(y,x.month-1,x.day);if(dt<new Date())dt=new Date(y+1,x.month-1,x.day);date=dt.toISOString().slice(0,10);}return {...x,_d:date};}).filter(x=>x._d).sort((a,b)=>new Date(a._d)-new Date(b._d));
+    $("#cal").innerHTML=rows.map(x=>{const dd=daysTo(x._d);const u=dd<=45?"u-red":dd<=120?"u-amber":"u-green";return `<div class="card dl ${u}"><div class="cd"><div class="n">${dd}</div><div class="u">days</div></div><div><div class="nm">${esc(x.name)}</div><div class="mt">${esc(x.program||"")}${x.applies_to?" · "+esc(x.applies_to):""}</div><div class="dt">${new Date(x._d+"T00:00:00").toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"})}</div>${x.note?'<div class="mt" style="margin-top:5px">'+esc(x.note)+'</div>':""}${x.source_url?' <a href="'+esc(x.source_url)+'" target="_blank" rel="noopener">source ↗</a>':""}</div></div>`;}).join("")||'<div class="empty">No deadlines loaded.</div>';
+  }catch(e){$("#cal").innerHTML='<div class="empty">Couldn\'t load deadlines.</div>';}
+}
+function buildFilters(){
+  const f=$("#filters");
+  f.innerHTML=`<button class="chip" data-imp="All" aria-pressed="true">All impact</button><button class="chip" data-imp="High">High</button><button class="chip" data-imp="Medium">Medium</button><button class="chip" data-imp="Low">Low</button><span class="sep"></span>`+
+    SECTORS.map(s=>`<button class="chip" data-sec="${esc(s)}" aria-pressed="false">${esc(s)}</button>`).join("")+
+    `<span class="sep"></span><label class="toggle"><input type="checkbox" id="persToggle" ${personalize?"checked":""}> My facility only</label><span class="count" id="feedCount"></span>`;
+  $$('#filters [data-imp]').forEach(b=>b.onclick=()=>{activeImpact=b.dataset.imp;$$('#filters [data-imp]').forEach(x=>x.setAttribute("aria-pressed",x===b));renderFeed();});
+  $$('#filters [data-sec]').forEach(b=>b.onclick=()=>{const s=b.dataset.sec;if(activeSectors.has(s))activeSectors.delete(s);else activeSectors.add(s);b.setAttribute("aria-pressed",activeSectors.has(s));renderFeed();});
+  $("#persToggle").onchange=e=>{personalize=e.target.checked;renderFeed();};
+}
+function wireCardButtons(){
+  document.querySelectorAll('#feed .icbtn').forEach(b=>b.onclick=()=>{
+    const C=window.__custom;if(!C)return;const set=C[b.dataset.act];if(!set)return;
+    const id=b.dataset.id;if(set.has(id))set.delete(id);else set.add(id);
+    saveProfileToAccount();renderFeed();
+  });
+}
+function renderFeed(){
+  const f=loadFac();const facSec=new Set(f.sectors||[]);
+  const U=window.__USER||null;const C=window.__custom||{pinned:new Set(),hidden:new Set(),ack:new Set()};
+  let rows=UPDATES.filter(u=>{
+    if(activeImpact!=="All"&&(u.impact||"").toLowerCase()!==activeImpact.toLowerCase())return false;
+    if(activeSectors.size&&!(u.sectors||[]).some(s=>activeSectors.has(s)))return false;
+    if(personalize&&facSec.size&&!(u.sectors||[]).some(s=>facSec.has(s))&&(u.impact||"").toLowerCase()!=="high")return false;
+    if(U&&C.hidden.has(String(u.id)))return false;
+    return true;
+  });
+  if(U)rows.sort((a,b)=>(C.pinned.has(String(b.id))?1:0)-(C.pinned.has(String(a.id))?1:0));
+  if($("#feedCount"))$("#feedCount").textContent=rows.length+" of "+UPDATES.length+" updates";
+  $("#feed").innerHTML=rows.map(u=>{
+    const id=String(u.id);const imp=(u.impact||"Low").toLowerCase();const bc=imp==="high"?"b-high":imp==="medium"?"b-med":"b-low";const il=imp==="high"?"HIGH IMPACT":imp.toUpperCase();
+    const isPin=U&&C.pinned.has(id),isAck=U&&C.ack.has(id);
+    return `<div class="card up${isPin?" pinned":""}${isAck?" ackd":""}"><div class="row1"><span class="badge ${bc}">${il}</span>${isPin?'<span class="pinflag">📌 Pinned</span>':""}<span class="type">${esc(u.rule_type||"")}</span><span class="meta">${u.publication_date?new Date(u.publication_date+"T00:00:00").toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"}):""}${u.source_url&&/2026-\d+/.test(u.source_url)?" · FR "+(u.source_url.match(/(20\d\d-\d+)/)||["",""])[1]:""}</span></div>`+
+      `<h3>${esc(u.title)}</h3><div class="sum">${u.summary_what?'<p><b>What changed:</b> '+esc(u.summary_what)+'</p>':""}${u.summary_who?'<p><b>Who it hits:</b> '+esc(u.summary_who)+'</p>':""}${u.summary_do?'<p><b>What to do:</b> '+esc(u.summary_do)+'</p>':""}</div>`+
+      (u.due_note?'<div class="due">⏰ '+esc(u.due_note)+'</div>':"")+
+      ((u.sectors&&u.sectors.length)?'<div class="tags">'+u.sectors.map(s=>'<span class="tag">'+esc(s)+'</span>').join("")+'</div>':"")+
+      '<div class="actions">'+(u.source_url?'<a class="src" href="'+esc(u.source_url)+'" target="_blank" rel="noopener">Read the rule on FederalRegister.gov →</a>':"")+
+        (U?'<button class="icbtn'+(isPin?" on":"")+'" data-act="pinned" data-id="'+id+'" title="Pin to top">📌</button><button class="icbtn'+(isAck?" on":"")+'" data-act="ack" data-id="'+id+'" title="Mark handled">✓ Done</button><button class="icbtn" data-act="hidden" data-id="'+id+'" title="Hide this update">✕ Hide</button>':"")+
+      '</div>'+
+      `</div>`;
+  }).join("")||'<div class="empty">No updates match these filters.</div>';
+  if(U)wireCardButtons();
+}
+async function loadFeed(){
+  try{const r=await fetch(SB+"/rest/v1/fr_updates?select=*&order=publication_date.desc",{headers:HDRS});UPDATES=await r.json();buildFilters();renderFeed();}
+  catch(e){$("#feed").innerHTML='<div class="empty">Couldn\'t load the feed.</div>';}
+}
+loadDeadlines();loadFeed();
+
+/* ---------- ENFORCEMENT ---------- */
+$("#enfBtn").onclick=async()=>{
+  const st=$("#enfState").value;if(!st){$("#enfState").focus();return;}
+  const b=$("#enfBtn"),a=$("#enfA");b.disabled=true;b.innerHTML='<span class="spin"></span> Searching…';a.classList.add("show");a.innerHTML='<span class="note">Querying EPA ECHO…</span>';
+  try{
+    const r=await fetch(FN+"echo",{method:"POST",headers:HDRS,body:JSON.stringify({state:st,naics:$("#enfNaics").value,major:$("#enfMajor").checked})});
+    const d=await r.json();
+    if(d.facilities&&d.facilities.length){
+      a.innerHTML='<h4>'+esc(d.count||d.facilities.length)+' facilities in '+esc(st)+'</h4>'+d.facilities.map(f=>`<div class="efac"><div class="en">${esc(f.name||"(facility)")}</div><div class="em">${esc(f.city||"")}${f.city?", ":""}${esc(f.state||st)}${f.naics?" · NAICS "+esc(f.naics):""}</div><div class="ep">${f.status?'<span>Status: <b>'+esc(f.status)+'</b></span>':""}${f.inspections?'<span>Inspections: <b>'+esc(f.inspections)+'</b></span>':""}${f.penalties?'<span>Penalties: <b>'+esc(f.penalties)+'</b></span>':""}${f.lastInspection?'<span>Last insp: <b>'+esc(f.lastInspection)+'</b></span>':""}</div>${f.dfr?'<a class="src" href="'+esc(f.dfr)+'" target="_blank" rel="noopener" style="font-size:12px">Detailed facility report ↗</a>':""}</div>`).join("")+'<div class="note">Source: EPA ECHO. <a href="'+esc(d.link)+'" target="_blank" rel="noopener">Open full results on EPA ECHO ↗</a></div>';
+    }else{
+      a.innerHTML='<div class="note">EPA\'s ECHO API is rate-limiting automated requests right now, so live results aren\'t loading in-app. Your search is ready on the official ECHO site — always current and authoritative:</div><div style="margin-top:10px"><a class="btn" href="'+esc(d.link||("https://echo.epa.gov/facilities/facility-search/results?p_st="+st))+'" target="_blank" rel="noopener">Open '+esc(st)+' results on EPA ECHO ↗</a></div>';
+    }
+  }catch(e){a.innerHTML='<div class="note">Network error. <a href="https://echo.epa.gov/facilities/facility-search/results?p_st='+esc(st)+'" target="_blank" rel="noopener">Search on EPA ECHO ↗</a></div>';}
+  b.disabled=false;b.textContent="Search ECHO";
+};
+
+/* ---------- RULE LOOKUP ---------- */
+$$('[data-cfr]').forEach(c=>c.onclick=()=>{const p=c.dataset.cfr.split("|");$("#rTitle").value=p[0];$("#rPart").value=p[1];$("#rSec").value=p[2]||"";$("#rSub").value=p[3]||"";$("#rBtn").click();});
+$("#rBtn").onclick=async()=>{
+  const part=$("#rPart").value.trim();if(!part){$("#rPart").focus();return;}
+  const b=$("#rBtn"),a=$("#rA");b.disabled=true;b.innerHTML='<span class="spin"></span> Fetching…';a.classList.add("show");a.innerHTML='<span class="note">Pulling current text from eCFR…</span>';
+  try{
+    const r=await fetch(FN+"ecfr",{method:"POST",headers:HDRS,body:JSON.stringify({title:$("#rTitle").value,part:part,section:$("#rSec").value,subpart:$("#rSub").value})});
+    const d=await r.json();
+    if(d.text){a.innerHTML='<h4>'+esc(d.citation)+' <span style="color:var(--muted);font-weight:600;text-transform:none;letter-spacing:0">· current as of '+esc(d.date)+'</span></h4><div class="cfrtext">'+esc(d.text)+(d.truncated?'\n\n…(truncated)':"")+'</div><div class="note">Official source: <a href="'+esc(d.url)+'" target="_blank" rel="noopener">'+esc(d.citation)+' on eCFR.gov ↗</a>. Regulations change — confirm the current text and your applicable subparts before relying on this.</div>';}
+    else{a.innerHTML='<div class="note">'+esc(d.error||"Couldn\'t find that cite.")+' Try just a Title + Part (e.g., 40 / 98).</div>';}
+  }catch(e){a.innerHTML='<div class="note">Network error — please try again.</div>';}
+  b.disabled=false;b.textContent="Look up rule text";
+};
+
+/* ---------- ACCOUNTS (Supabase Auth) ---------- */
+window.__custom=window.__custom||{pinned:new Set(),hidden:new Set(),ack:new Set()};
+const sbc = window.supabase ? window.supabase.createClient(SB, KEY) : null;
+function activeSection(){const t=document.querySelector('.tab[aria-selected="true"]');return t?t.dataset.p:"dashboard";}
+const authBg=$("#authBg");let authMode="signin";
+function paintAuth(){
+  const T={signin:["Sign in","Sign in to leave feedback and save your facility settings.","Sign in"],signup:["Create your account","Free — unlocks feedback and saves your rules across devices.","Create account"],forgot:["Reset password","We'll email you a link to set a new password.","Send reset link"]}[authMode];
+  $("#authTitle").textContent=T[0];$("#authSub").textContent=T[1];$("#authSubmit").textContent=T[2];
+  $("#pwField").style.display=authMode==="forgot"?"none":"flex";
+  $("#toSignup").textContent=authMode==="signup"?"Have an account? Sign in":"Create an account";
+  $("#toForgot").style.display=authMode==="forgot"?"none":"inline";
+}
+function openAuth(mode){authMode=mode||"signin";$("#authMsg").className="msg";paintAuth();authBg.classList.add("open");setTimeout(()=>$("#authEmail").focus(),60);}
+function closeAuth(){authBg.classList.remove("open");}
+function authMsg(t,ok){const m=$("#authMsg");m.textContent=t;m.className="msg "+(ok?"ok":"err");}
+$("#authClose").onclick=closeAuth;
+authBg.onclick=e=>{if(e.target===authBg)closeAuth();};
+$("#toSignup").onclick=()=>{authMode=(authMode==="signup")?"signin":"signup";$("#authMsg").className="msg";paintAuth();};
+$("#toForgot").onclick=()=>{authMode="forgot";$("#authMsg").className="msg";paintAuth();};
+async function doAuth(){
+  if(!sbc){authMsg("Sign-in is loading — refresh and try again.");return;}
+  const email=$("#authEmail").value.trim(),pw=$("#authPw").value;
+  if(!email){authMsg("Enter your email.");return;}
+  const b=$("#authSubmit"),old=b.textContent;b.disabled=true;b.innerHTML='<span class="spin"></span>';
+  try{
+    if(authMode==="forgot"){
+      const {error}=await sbc.auth.resetPasswordForEmail(email,{redirectTo:location.origin});
+      if(error)authMsg(error.message);else authMsg("Check your email for a reset link.",true);
+    }else if(authMode==="signup"){
+      if(!pw||pw.length<6){authMsg("Password must be at least 6 characters.");b.disabled=false;b.textContent=old;return;}
+      const {data,error}=await sbc.auth.signUp({email,password:pw});
+      if(error)authMsg(error.message);
+      else if(data.session){authMsg("Welcome — you're in!",true);setTimeout(closeAuth,600);}
+      else authMsg("Account created — check your email to confirm, then sign in.",true);
+    }else{
+      const {error}=await sbc.auth.signInWithPassword({email,password:pw});
+      if(error)authMsg(error.message);else closeAuth();
+    }
+  }catch(e){authMsg("Something went wrong — try again.");}
+  b.disabled=false;b.textContent=old;paintAuth();
+}
+$("#authSubmit").onclick=doAuth;
+$("#authEmail").addEventListener("keydown",e=>{if(e.key==="Enter")doAuth();});
+$("#authPw").addEventListener("keydown",e=>{if(e.key==="Enter")doAuth();});
+function renderAcct(){
+  const a=$("#acct");
+  if(window.__USER){a.innerHTML='<span class="who" title="'+esc(window.__USER.email)+'">'+esc(window.__USER.email)+'</span><button class="linkbtn" id="signoutBtn">Sign out</button>';$("#signoutBtn").onclick=async()=>{if(sbc)await sbc.auth.signOut();};}
+  else{a.innerHTML='<button class="linkbtn" id="signinBtn">Sign in</button>';$("#signinBtn").onclick=()=>openAuth("signin");}
+}
+async function loadProfileFromAccount(){
+  if(!sbc||!window.__USER)return;
+  try{
+    const {data}=await sbc.from("profiles").select("*").eq("id",window.__USER.id).maybeSingle();
+    if(data){
+      saveFac({state:data.state||"",type:data.facility_type||"",sectors:data.sectors||[]});
+      window.__custom={pinned:new Set(data.pinned||[]),hidden:new Set(data.hidden||[]),ack:new Set(data.acknowledged||[])};
+      paintFacForm();buildStateOpts($("#enfState"),data.state||"");
+    }else{await saveProfileToAccount();}
+  }catch(e){}
+}
+async function saveProfileToAccount(){
+  if(!sbc||!window.__USER)return;
+  const f=loadFac(),c=window.__custom||{pinned:new Set(),hidden:new Set(),ack:new Set()};
+  try{await sbc.from("profiles").upsert({id:window.__USER.id,email:window.__USER.email,state:f.state||null,facility_type:f.type||null,sectors:f.sectors||[],pinned:[...c.pinned],hidden:[...c.hidden],acknowledged:[...c.ack],updated_at:new Date().toISOString()});}catch(e){}
+}
+async function onAuth(session){
+  window.__USER=session?session.user:null;
+  renderAcct();renderFeedbackBody();
+  if(window.__USER)await loadProfileFromAccount();
+  renderFacBanner();renderFeed();
+}
+if(sbc){sbc.auth.getSession().then(({data})=>onAuth(data.session));sbc.auth.onAuthStateChange((_e,s)=>onAuth(s));}
+else{renderAcct();renderFeedbackBody();}
+
+/* ---------- FEEDBACK (gated behind login) ---------- */
+const fpop=$("#fpop");
+$("#fbtn").onclick=()=>{fpop.classList.toggle("open");if(fpop.classList.contains("open"))renderFeedbackBody();};
+$("#fclose").onclick=()=>fpop.classList.remove("open");
+function renderFeedbackBody(){
+  const b=$("#fbody");if(!b)return;
+  if(!window.__USER){b.innerHTML='<div class="fgate">Sign in to send feedback to the AIM™ EH&S team.<br><br><button class="btn" id="fbSignin">Sign in / Create account</button></div>';const s=$("#fbSignin");if(s)s.onclick=()=>{fpop.classList.remove("open");openAuth("signin");};return;}
+  b.innerHTML='<form id="fform">'+
+    '<div class="frow"><div><label>Type</label><select id="fCat"><option value="idea">Idea</option><option value="bug">Bug</option><option value="question">Question</option><option value="other">Other</option></select></div>'+
+    '<div><label>Urgency</label><select id="fPri"><option value="normal">Normal</option><option value="low">Low</option><option value="high">High</option></select></div></div>'+
+    '<div><label>Your feedback</label><textarea id="fMsg" rows="4" placeholder="What\'s working, what\'s not, or what you\'d love to see…"></textarea><span class="note" style="margin-top:4px;display:block">Tip: Ctrl + Enter to send.</span></div>'+
+    '<div class="msg" id="fResult"></div>'+
+    '<button class="btn" id="fSend" type="submit" style="width:100%">Send feedback</button></form>';
+  const form=$("#fform");
+  $("#fMsg").addEventListener("keydown",e=>{if((e.ctrlKey||e.metaKey)&&e.key==="Enter"){e.preventDefault();form.requestSubmit();}});
+  form.onsubmit=async e=>{e.preventDefault();await sendFeedback();};
+}
+async function sendFeedback(){
+  const msg=$("#fMsg").value.trim();if(!msg||!window.__USER)return;
+  const send=$("#fSend"),r=$("#fResult");send.disabled=true;send.innerHTML='<span class="spin"></span> Sending…';
+  try{
+    const {error}=await sbc.from("feedback").insert({user_id:window.__USER.id,email:window.__USER.email,category:$("#fCat").value,priority:$("#fPri").value,section:activeSection(),message:msg,page_path:location.pathname+"#"+activeSection()});
+    if(error){r.textContent=error.message;r.className="msg err";}
+    else{r.textContent="✓ Thanks — sent! Add another note any time.";r.className="msg ok";$("#fMsg").value="";}
+  }catch(e){r.textContent="Couldn't send — try again.";r.className="msg err";}
+  send.disabled=false;send.textContent="Send feedback";
+}
+
+/* ============ COMMUNITY + PROFILES + ADMIN ============ */
+function isAdminUser(){return !!(window.__USER && (window.__USER.email||"").toLowerCase()==="chad@aim-env.com");}
+function timeAgo(t){var s=(Date.now()-new Date(t))/1000;if(s<60)return"just now";if(s<3600)return Math.floor(s/60)+"m ago";if(s<86400)return Math.floor(s/3600)+"h ago";return Math.floor(s/86400)+"d ago";}
+function avatarHTML(name,photo,sme){
+  var initials=((name||"?").trim().slice(0,1)||"?").toUpperCase();
+  var img=photo?'<img src="'+esc(photo)+'" alt="">':'<span>'+esc(initials)+'</span>';
+  return '<span class="avatar">'+img+'</span>';
+}
+function poster(p){
+  if(p.anonymous)return '<span class="psr">'+avatarHTML("?",null,false)+'<b>Anonymous</b></span>';
+  var check=p.author_sme?' <span class="bluecheck" title="Verified EHS expert">✓</span>':'';
+  return '<span class="psr">'+avatarHTML(p.author_name,p.author_photo,p.author_sme)+'<b class="authlink" data-uid="'+esc(p.user_id||"")+'">'+esc(p.author_name||"Member")+'</b>'+check+'</span>';
+}
+function wireAuthLinks(scope){(scope||document).querySelectorAll('.authlink').forEach(function(a){if(a.dataset.uid)a.onclick=function(){openProfile(a.dataset.uid);};});}
+async function openProfile(uid){
+  var bg=$("#profBg");if(!bg||!uid)return;
+  $("#profBody").innerHTML='<div class="empty">Loading…</div>';bg.classList.add("open");
+  try{
+    var res=await sbc.rpc("public_profile",{p_uid:uid});var p=(res.data&&res.data[0])||{};
+    var initials=((p.display_name||"?").trim().slice(0,1)||"?").toUpperCase();
+    var img=p.photo_url?'<img src="'+esc(p.photo_url)+'" alt="">':'<span>'+esc(initials)+'</span>';
+    var check=p.is_sme?' <span class="bluecheck">✓</span>':'';
+    $("#profBody").innerHTML='<div class="pbig"><span class="avatar xl">'+img+'</span><div><div class="pname">'+esc(p.display_name||"Member")+check+'</div>'+(p.is_sme?'<div class="smetag">Verified EHS expert</div>':"")+(p.company?'<div class="pcompany">'+esc(p.company)+'</div>':"")+'</div></div>'+(p.bio?'<p class="pbio">'+esc(p.bio)+'</p>':'<p class="note">No bio yet.</p>');
+  }catch(e){$("#profBody").innerHTML='<div class="note">Couldn\'t load this profile.</div>';}
+}
+
+/* --- community feed --- */
+async function loadCommunity(){
+  var list=$("#commList");if(!list||!sbc)return;
+  renderCommGate();
+  try{
+    var res=await sbc.from("community_posts").select("*").order("created_at",{ascending:true});
+    if(res.error)throw res.error;
+    window.__posts=res.data||[];renderCommunity();
+  }catch(e){list.innerHTML='<div class="empty">Couldn\'t load the community.</div>';}
+}
+function renderCommGate(){
+  var g=$("#commGate");if(!g)return;
+  if(window.__USER){
+    g.innerHTML='<button class="btn" id="askOpen">+ Ask the community</button><div id="askForm"></div>';
+    $("#askOpen").onclick=toggleAskForm;
+  }else{
+    g.innerHTML='<div class="fbanner">Join the conversation — <button class="linkbtn" id="commSignin" style="margin-left:6px">sign in or create a free account</button> to ask questions and answer others.</div>';
+    $("#commSignin").onclick=function(){openAuth("signin");};
+  }
+}
+function toggleAskForm(){
+  var f=$("#askForm");if(!f)return;
+  if(f.innerHTML){f.innerHTML="";return;}
+  f.innerHTML='<div class="card tool" style="margin-top:12px"><div class="field"><label>Your question</label><input type="text" id="qTitle" placeholder="e.g. Does a tank degassing event trigger Subpart W reporting?"></div><div class="field"><label>Details</label><textarea id="qBody" placeholder="Add context — your process, the rule you\'re unsure about, what you\'ve already checked."></textarea></div><label class="toggle" style="margin-bottom:10px"><input type="checkbox" id="qAnon"> Post anonymously</label><div class="msg" id="qMsg"></div><div class="row" style="align-items:center"><button class="btn" id="qSend">Submit question</button><span class="note" style="margin:0">Reviewed before it goes public.</span></div></div>';
+  $("#qSend").onclick=submitQuestion;
+}
+async function submitQuestion(){
+  var title=$("#qTitle").value.trim(),body=$("#qBody").value.trim();
+  if(!title&&!body)return;
+  var b=$("#qSend");b.disabled=true;b.innerHTML='<span class="spin"></span>';
+  try{
+    var res=await sbc.from("community_posts").insert({title:title||null,body:body||title,anonymous:$("#qAnon").checked});
+    var m=$("#qMsg");
+    if(res.error){m.textContent=res.error.message;m.className="msg err";}
+    else{m.textContent="✓ Submitted — it'll appear here once approved.";m.className="msg ok";$("#qTitle").value="";$("#qBody").value="";loadCommunity();}
+  }catch(e){$("#qMsg").textContent="Couldn't submit — try again.";$("#qMsg").className="msg err";}
+  b.disabled=false;b.textContent="Submit question";
+}
+function renderCommunity(){
+  var list=$("#commList");if(!list)return;
+  var posts=window.__posts||[];
+  var qs=posts.filter(function(p){return !p.parent_id;}).sort(function(a,b){return new Date(b.created_at)-new Date(a.created_at);});
+  var ans=posts.filter(function(p){return p.parent_id;});
+  if(!qs.length){list.innerHTML='<div class="empty">No questions yet — be the first to ask the community.</div>';return;}
+  list.innerHTML=qs.map(function(q){
+    var mine=window.__USER&&q.user_id===window.__USER.id;
+    var pend=q.status!=="approved";
+    var qa=ans.filter(function(a){return a.parent_id===q.id;}).sort(function(a,b){return new Date(a.created_at)-new Date(b.created_at);});
+    return '<div class="card qpost'+(pend?" pend":"")+'">'+
+      '<div class="qhead">'+poster(q)+(pend?'<span class="pendtag">'+(mine?"Awaiting approval":"Pending")+'</span>':'<span class="qtime">'+timeAgo(q.created_at)+'</span>')+'</div>'+
+      (q.title?'<h3 class="qtitle">'+esc(q.title)+'</h3>':"")+
+      '<div class="qbody">'+esc(q.body)+'</div>'+
+      (qa.length?'<div class="answers">'+qa.map(function(a){return '<div class="ans"><div class="qhead">'+poster(a)+'<span class="qtime">'+timeAgo(a.created_at)+'</span></div><div class="qbody">'+esc(a.body)+'</div></div>';}).join("")+'</div>':"")+
+      (window.__USER?'<div class="answerbox" data-q="'+q.id+'"><button class="linkbtn ansOpen" data-q="'+q.id+'">Answer this</button></div>':"")+
+    '</div>';
+  }).join("");
+  wireAuthLinks(list);
+  list.querySelectorAll(".ansOpen").forEach(function(btn){btn.onclick=function(){openAnswer(btn.dataset.q,btn.closest(".answerbox"));};});
+}
+function openAnswer(qid,box){
+  if(box.querySelector(".ansform")){box.querySelector(".ansform").remove();return;}
+  var d=document.createElement("div");d.className="ansform";
+  d.innerHTML='<textarea placeholder="Share what you know…"></textarea><label class="toggle"><input type="checkbox" class="aAnon"> Answer anonymously</label><div class="msg aMsg"></div><button class="btn aSend">Submit answer</button>';
+  box.appendChild(d);
+  d.querySelector(".aSend").onclick=function(){submitAnswer(qid,d);};
+}
+async function submitAnswer(qid,d){
+  var body=d.querySelector("textarea").value.trim();if(!body)return;
+  var b=d.querySelector(".aSend");b.disabled=true;b.innerHTML='<span class="spin"></span>';
+  try{
+    var res=await sbc.from("community_posts").insert({parent_id:qid,body:body,anonymous:d.querySelector(".aAnon").checked});
+    var m=d.querySelector(".aMsg");
+    if(res.error){m.textContent=res.error.message;m.className="msg err aMsg";}
+    else{m.textContent="✓ Submitted — appears once approved.";m.className="msg ok aMsg";d.querySelector("textarea").value="";}
+  }catch(e){}
+  b.disabled=false;b.textContent="Submit answer";
+}
+
+/* --- profile section (My account) --- */
+async function refreshProfile(){
+  if(!sbc||!window.__USER)return;
+  try{var res=await sbc.from("profiles").select("*").eq("id",window.__USER.id).maybeSingle();window.__profile=res.data||{};}catch(e){}
+}
+function renderProfileSection(){
+  var host=$("#profileSection");if(!host)return;
+  if(!window.__USER){host.innerHTML='<p class="note">Sign in to set up your community profile, photo, and expert status.</p>';return;}
+  var p=window.__profile||{};
+  host.innerHTML=
+    '<div class="field"><label>Display name</label><input type="text" id="pfName" value="'+esc(p.display_name||"")+'" placeholder="How your name shows in the community"></div>'+
+    '<div class="field"><label>Company</label><input type="text" id="pfCompany" value="'+esc(p.company||"")+'"></div>'+
+    '<div class="field"><label>Short bio</label><textarea id="pfBio" placeholder="Your EHS background — what you know best.">'+esc(p.bio||"")+'</textarea></div>'+
+    '<div style="display:flex;align-items:center;margin-bottom:14px"><button class="btn" id="pfSave">Save profile</button><span class="saved" id="pfSaved">Saved ✓</span></div>'+
+    '<div class="field"><label>Profile photo</label>'+imgState(p.photo_status,p.photo_url)+'<input type="file" accept="image/*" id="pfPhoto"></div>'+
+    smeBlock(p)+logoBlock(p);
+  $("#pfSave").onclick=saveProfileFields;
+  $("#pfPhoto").onchange=function(e){uploadProfileImage(e.target.files[0],"avatars","photo_pending","photo_status");};
+  var sb=$("#smeApply");if(sb)sb.onclick=applySme;
+  var lf=$("#pfLogo");if(lf)lf.onchange=function(e){uploadProfileImage(e.target.files[0],"logos","company_logo_pending","logo_status");};
+}
+function imgState(status,url){
+  if(status==="pending")return '<div class="note" style="margin:4px 0 8px">Uploaded — awaiting approval.</div>';
+  if(url)return '<div class="avatar lg" style="margin:6px 0"><img src="'+esc(url)+'" alt=""></div>';
+  return '<div class="note" style="margin:4px 0 8px">None yet.</div>';
+}
+function smeBlock(p){
+  if(p.is_sme)return '<div class="smebox"><span class="bluecheck">✓</span> You\'re a <b>verified EHS expert</b> — your blue check shows on every post.</div>';
+  if(p.sme_status==="pending")return '<div class="smebox"><b>Expert verification</b><div class="note">Your application is under review.</div></div>';
+  return '<div class="smebox"><b>Become a verified expert</b><p class="note">Get a blue check beside your name. Tell us your EHS credentials/experience:</p><textarea id="smeNote" placeholder="e.g. CIH · 12 yrs LDAR program management · Subpart W specialist"></textarea><button class="btn ghost" id="smeApply" style="margin-top:8px">Apply for verification</button></div>';
+}
+function logoBlock(p){
+  if(!p.is_sme)return "";
+  return '<div class="field" style="margin-top:14px"><label>Company logo (verified experts)</label>'+imgState(p.logo_status,p.company_logo_url)+'<input type="file" accept="image/*" id="pfLogo"></div>';
+}
+async function saveProfileFields(){
+  if(!window.__USER)return;
+  try{await sbc.from("profiles").update({display_name:($("#pfName").value.trim()||null),company:($("#pfCompany").value.trim()||null),bio:($("#pfBio").value.trim()||null)}).eq("id",window.__USER.id);
+    $("#pfSaved").classList.add("show");setTimeout(function(){$("#pfSaved").classList.remove("show");},1600);await refreshProfile();}catch(e){}
+}
+async function applySme(){
+  var note=($("#smeNote")&&$("#smeNote").value.trim())||"";
+  try{await sbc.from("profiles").update({sme_note:note,sme_status:"pending"}).eq("id",window.__USER.id);await refreshProfile();renderProfileSection();toast("Application submitted");}catch(e){}
+}
+async function uploadProfileImage(file,folder,pendCol,statusCol){
+  if(!file||!window.__USER)return;
+  if(file.size>5*1024*1024){toast("Image must be under 5MB");return;}
+  var ext=((file.name.split(".").pop())||"jpg").toLowerCase().replace(/[^a-z0-9]/g,"");
+  var path=folder+"/"+window.__USER.id+"-"+Date.now()+"."+ext;
+  try{
+    var up=await sbc.storage.from("uploads").upload(path,file,{upsert:true,contentType:file.type});
+    if(up.error){toast("Upload failed");return;}
+    var url=sbc.storage.from("uploads").getPublicUrl(path).data.publicUrl;
+    var patch={};patch[pendCol]=url;patch[statusCol]="pending";
+    await sbc.from("profiles").update(patch).eq("id",window.__USER.id);
+    toast("Uploaded — awaiting approval");await refreshProfile();renderProfileSection();
+  }catch(e){toast("Upload failed");}
+}
+
+/* --- admin console (Chad only) --- */
+function selectTab(p){$$(".tab").forEach(function(x){x.setAttribute("aria-selected",x.dataset.p===p);});$$(".panel").forEach(function(pl){pl.classList.remove("active");});var el=$("#p-"+p);if(el)el.classList.add("active");window.scrollTo({top:0,behavior:"smooth"});}
+function buildAdminTab(){
+  if(!isAdminUser())return;
+  if(document.querySelector('.tab[data-p="admin"]'))return;
+  var b=document.createElement("button");b.className="tab";b.setAttribute("role","tab");b.dataset.p="admin";b.setAttribute("aria-selected","false");b.textContent="● Admin";
+  b.onclick=function(){selectTab("admin");loadAdmin();};
+  $("#tabs").appendChild(b);
+}
+async function loadAdmin(){
+  var host=$("#adminBody");if(!host||!isAdminUser())return;
+  host.innerHTML='<div class="empty">Loading…</div>';
+  try{
+    var posts=(await sbc.from("community_posts").select("*").eq("status","pending").order("created_at")).data||[];
+    var profs=(await sbc.from("profiles").select("id,email,display_name,company,sme_note,photo_pending,photo_status,company_logo_pending,logo_status,sme_status").or("photo_status.eq.pending,sme_status.eq.pending,logo_status.eq.pending")).data||[];
+    var tickets=(await sbc.from("feedback").select("*").order("created_at",{ascending:false})).data||[];
+    window.__profs=profs;
+    host.innerHTML=adminPostsHTML(posts)+adminApprovalsHTML(profs)+adminTicketsHTML(tickets);
+    wireAdmin();
+  }catch(e){host.innerHTML='<div class="note">Couldn\'t load admin data: '+esc(String(e.message||e))+'</div>';}
+}
+function adminPostsHTML(posts){
+  var rows=posts.map(function(p){
+    var who=p.anonymous?'Anonymous ('+esc(p.author_name||p.user_id||"")+')':esc(p.author_name||"");
+    return '<div class="acard"><div class="meta">'+(p.parent_id?'<span class="tag">Answer</span> ':'<span class="tag">Question</span> ')+who+(p.anonymous?' <span class="tag">anon</span>':"")+'</div>'+(p.title?'<div class="atitle">'+esc(p.title)+'</div>':"")+'<div class="abody">'+esc(p.body)+'</div><div class="aact"><button class="btn ok" data-act="approve_post" data-id="'+p.id+'">Approve</button><button class="btn ghost" data-act="reject_post" data-id="'+p.id+'">Reject</button></div></div>';
+  }).join("");
+  return '<div class="asec"><h3>Pending posts <span class="cnt">'+posts.length+'</span></h3>'+(posts.length?rows:'<p class="note">Nothing waiting.</p>')+'</div>';
+}
+function adminApprovalsHTML(profs){
+  var rows=profs.map(function(p){
+    var blocks="";
+    if(p.photo_status==="pending")blocks+='<div class="aprow"><span>Profile photo</span><img class="athumb" src="'+esc(p.photo_pending||"")+'"><span class="aact"><button class="btn ok" data-act="approve_photo" data-id="'+p.id+'">Approve</button><button class="btn ghost" data-act="reject_photo" data-id="'+p.id+'">Reject</button></span></div>';
+    if(p.logo_status==="pending")blocks+='<div class="aprow"><span>Company logo</span><img class="athumb" src="'+esc(p.company_logo_pending||"")+'"><span class="aact"><button class="btn ok" data-act="approve_logo" data-id="'+p.id+'">Approve</button><button class="btn ghost" data-act="reject_logo" data-id="'+p.id+'">Reject</button></span></div>';
+    if(p.sme_status==="pending")blocks+='<div class="aprow"><span>Verified expert<div class="note">'+esc(p.sme_note||"(no note)")+'</div></span><span class="aact"><button class="btn ok" data-act="approve_sme" data-id="'+p.id+'">Approve ✓</button><button class="btn ghost" data-act="reject_sme" data-id="'+p.id+'">Reject</button></span></div>';
+    return '<div class="acard"><div class="meta"><b>'+esc(p.display_name||p.email||"Member")+'</b>'+(p.company?' · '+esc(p.company):"")+'</div>'+blocks+'</div>';
+  }).join("");
+  return '<div class="asec"><h3>Pending photos, logos &amp; experts <span class="cnt">'+profs.length+'</span></h3>'+(profs.length?rows:'<p class="note">Nothing waiting.</p>')+'</div>';
+}
+function adminTicketsHTML(tickets){
+  var rows=tickets.map(function(t){
+    var imgs=(t.images&&t.images.length)?'<div class="tickimgs">'+t.images.map(function(u){return '<a href="'+esc(u)+'" target="_blank"><img src="'+esc(u)+'"></a>';}).join("")+'</div>':"";
+    return '<div class="acard"><div class="meta"><span class="tag">'+esc(t.category||"")+'</span> <span class="tag">'+esc(t.priority||"")+'</span> '+esc(t.email||"")+' · '+esc(new Date(t.created_at).toLocaleDateString())+(t.status==="resolved"?' <span class="tag ok">resolved</span>':"")+'</div><div class="abody">'+esc(t.message||"")+'</div>'+imgs+(t.admin_response?'<div class="aresp">↪ '+esc(t.admin_response)+'</div>':"")+'<div class="treply"><textarea placeholder="Reply to '+esc(t.email||"submitter")+'…"></textarea><label class="toggle"><input type="checkbox" class="temail" checked> Also email them</label><div class="aact"><button class="btn ok" data-act="reply" data-id="'+t.id+'" data-to="'+esc(t.email||"")+'">Send reply</button><button class="btn ghost" data-act="resolve" data-id="'+t.id+'">Mark resolved</button></div><div class="msg tmsg"></div></div></div>';
+  }).join("");
+  return '<div class="asec"><h3>Feedback tickets <span class="cnt">'+tickets.length+'</span></h3>'+(tickets.length?rows:'<p class="note">No tickets yet.</p>')+'</div>';
+}
+function wireAdmin(){
+  document.querySelectorAll('#adminBody [data-act]').forEach(function(b){
+    b.onclick=function(){adminAction(b.dataset.act,b.dataset.id,b);};
+  });
+}
+async function adminAction(act,id,btn){
+  try{
+    if(act==="approve_post"){await sbc.from("community_posts").update({status:"approved",approved_at:new Date().toISOString()}).eq("id",id);}
+    else if(act==="reject_post"){await sbc.from("community_posts").update({status:"rejected"}).eq("id",id);}
+    else if(act==="approve_photo"){var p=(window.__profs||[]).find(function(x){return x.id===id;});await sbc.from("profiles").update({photo_url:p.photo_pending,photo_status:"approved",photo_pending:null}).eq("id",id);}
+    else if(act==="reject_photo"){await sbc.from("profiles").update({photo_status:"rejected",photo_pending:null}).eq("id",id);}
+    else if(act==="approve_logo"){var p2=(window.__profs||[]).find(function(x){return x.id===id;});await sbc.from("profiles").update({company_logo_url:p2.company_logo_pending,logo_status:"approved",company_logo_pending:null}).eq("id",id);}
+    else if(act==="reject_logo"){await sbc.from("profiles").update({logo_status:"rejected",company_logo_pending:null}).eq("id",id);}
+    else if(act==="approve_sme"){await sbc.from("profiles").update({is_sme:true,sme_status:"approved"}).eq("id",id);}
+    else if(act==="reject_sme"){await sbc.from("profiles").update({sme_status:"rejected"}).eq("id",id);}
+    else if(act==="resolve"){await sbc.from("feedback").update({status:"resolved"}).eq("id",id);}
+    else if(act==="reply"){await sendAdminReply(id,btn);return;}
+    loadAdmin();
+  }catch(e){toast("Action failed: "+(e.message||e));}
+}
+async function sendAdminReply(id,btn){
+  var card=btn.closest(".treply");var text=card.querySelector("textarea").value.trim();var to=btn.dataset.to;
+  var emailIt=card.querySelector(".temail").checked;var msg=card.querySelector(".tmsg");
+  if(!text)return;
+  btn.disabled=true;btn.innerHTML='<span class="spin"></span>';
+  try{
+    await sbc.from("feedback").update({admin_response:text,responded_at:new Date().toISOString(),status:"resolved"}).eq("id",id);
+    if(emailIt&&to){
+      var r=await sbc.functions.invoke("reply-email",{body:{to:to,subject:"Re: your feedback on the EHS Hub",body:text}});
+      var d=r.data||{};
+      if(d.error==="no_resend_key"){msg.textContent="Saved. (Email not sent — add RESEND_API_KEY to enable email.)";msg.className="msg err tmsg";}
+      else if(d.ok){msg.textContent="✓ Replied + emailed.";msg.className="msg ok tmsg";}
+      else{msg.textContent="Saved in-app. Email error.";msg.className="msg err tmsg";}
+    }else{msg.textContent="✓ Saved (in-app only).";msg.className="msg ok tmsg";}
+  }catch(e){msg.textContent="Failed: "+(e.message||e);msg.className="msg err tmsg";}
+  btn.disabled=false;btn.textContent="Send reply";
+}
+
+/* --- feedback with image upload/paste (overrides earlier versions) --- */
+window.__fbImages=[];
+function renderFeedbackBody(){
+  var b=$("#fbody");if(!b)return;
+  window.__fbImages=[];
+  if(!window.__USER){b.innerHTML='<div class="fgate">Sign in to send feedback to the AIM™ EH&S team.<br><br><button class="btn" id="fbSignin">Sign in / Create account</button></div>';var s=$("#fbSignin");if(s)s.onclick=function(){$("#fpop").classList.remove("open");openAuth("signin");};return;}
+  b.innerHTML='<form id="fform">'+
+    '<div class="frow"><div><label>Type</label><select id="fCat"><option value="idea">Idea</option><option value="bug">Bug</option><option value="question">Question</option><option value="other">Other</option></select></div>'+
+    '<div><label>Urgency</label><select id="fPri"><option value="normal">Normal</option><option value="low">Low</option><option value="high">High</option></select></div></div>'+
+    '<div><label>Your feedback</label><textarea id="fMsg" rows="4" placeholder="What\'s working, what\'s not, or what you\'d love to see… (you can paste a screenshot)"></textarea><span class="note" style="margin-top:4px;display:block">Tip: paste an image or attach below. Ctrl + Enter to send.</span></div>'+
+    '<div><label class="lbl">Screenshots (optional)</label><input type="file" accept="image/*" multiple id="fFiles"><div id="fThumbs" class="fthumbs"></div></div>'+
+    '<div class="msg" id="fResult"></div>'+
+    '<button class="btn" id="fSend" type="submit" style="width:100%">Send feedback</button></form>';
+  var form=$("#fform");
+  $("#fMsg").addEventListener("keydown",function(e){if((e.ctrlKey||e.metaKey)&&e.key==="Enter"){e.preventDefault();form.requestSubmit();}});
+  $("#fMsg").addEventListener("paste",function(e){var items=(e.clipboardData||{}).items||[];for(var i=0;i<items.length;i++){if(items[i].type&&items[i].type.indexOf("image")===0){var f=items[i].getAsFile();if(f)addFbImage(f);}}});
+  $("#fFiles").addEventListener("change",function(e){Array.prototype.forEach.call(e.target.files,addFbImage);});
+  form.onsubmit=function(e){e.preventDefault();sendFeedback();};
+}
+function addFbImage(file){
+  if(!file||window.__fbImages.length>=4)return;
+  window.__fbImages.push(file);
+  var t=$("#fThumbs");if(!t)return;
+  var u=URL.createObjectURL(file);t.insertAdjacentHTML("beforeend",'<span class="fthumb"><img src="'+u+'"></span>');
+}
+async function sendFeedback(){
+  var msg=$("#fMsg").value.trim();if((!msg&&!window.__fbImages.length)||!window.__USER)return;
+  var send=$("#fSend"),r=$("#fResult");send.disabled=true;send.innerHTML='<span class="spin"></span> Sending…';
+  try{
+    var urls=[];
+    for(var i=0;i<window.__fbImages.length;i++){var f=window.__fbImages[i];var ext=((f.name||"png").split(".").pop()||"png").toLowerCase().replace(/[^a-z0-9]/g,"");var path="feedback/"+window.__USER.id+"-"+Date.now()+"-"+i+"."+ext;var up=await sbc.storage.from("uploads").upload(path,f,{upsert:true,contentType:f.type});if(!up.error){urls.push(sbc.storage.from("uploads").getPublicUrl(path).data.publicUrl);}}
+    var res=await sbc.from("feedback").insert({user_id:window.__USER.id,email:window.__USER.email,category:$("#fCat").value,priority:$("#fPri").value,section:activeSection(),message:msg,page_path:location.pathname+"#"+activeSection(),images:urls});
+    if(res.error){r.textContent=res.error.message;r.className="msg err";}
+    else{r.textContent="✓ Thanks — sent! Add another note any time.";r.className="msg ok";$("#fMsg").value="";window.__fbImages=[];if($("#fThumbs"))$("#fThumbs").innerHTML="";}
+  }catch(e){r.textContent="Couldn't send — try again.";r.className="msg err";}
+  send.disabled=false;send.textContent="Send feedback";
+}
+
+/* --- onAuth override: also load profile, community, admin --- */
+async function onAuth(session){
+  window.__USER=session?session.user:null;
+  renderAcct();renderFeedbackBody();
+  if(window.__USER){await loadProfileFromAccount();await refreshProfile();}
+  renderFacBanner();renderFeed();renderProfileSection();buildAdminTab();loadCommunity();
+}
+(function(){var bg=$("#profBg");if(bg){bg.onclick=function(e){if(e.target===bg)bg.classList.remove("open");};var x=$("#profClose");if(x)x.onclick=function(){bg.classList.remove("open");};}})();
+loadCommunity();renderProfileSection();
+
+</script>
+</body>
+</html>
