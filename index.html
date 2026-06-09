@@ -3,8 +3,22 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>EHS Compliance Hub — AIM™ EH&S</title>
-<meta name="description" content="A live EPA compliance command center for the people who file the report: Federal Register watch, reporting-deadline calendar, an ask-anything compliance assistant, EPA enforcement lookup, and current CFR rule text — tailored to your facility.">
+<title>EHS Compliance Hub — Free EHS Tools by AIM EH&S</title>
+<meta name="description" content="Free EHS compliance tools for the people who file the report: Federal Register rule watch, reporting-deadline calendar, EPA enforcement lookup, eCFR rule-text search, and cited requirements packets. Built by AIM Environmental Health & Safety (aim-env.com).">
+<link rel="canonical" href="https://hub.aim-env.com/">
+<meta name="robots" content="index,follow">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="AIM EHS Hub">
+<meta property="og:title" content="EHS Compliance Hub — Free EHS Tools by AIM EH&S">
+<meta property="og:description" content="Federal Register watch, reporting-deadline calendar, EPA enforcement lookup, eCFR rule text, and cited requirements packets — free EHS tools from AIM EH&S.">
+<meta property="og:url" content="https://hub.aim-env.com/">
+<meta name="twitter:card" content="summary">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@graph":[
+ {"@type":"WebApplication","@id":"https://hub.aim-env.com/#app","name":"EHS Compliance Hub","alternateName":"AIM EHS Hub","url":"https://hub.aim-env.com/","applicationCategory":"BusinessApplication","operatingSystem":"Web","isAccessibleForFree":true,"description":"Free EHS compliance tools: Federal Register rule watch, reporting-deadline calendar, EPA enforcement lookup, eCFR rule-text search, and paragraph-cited requirements packets.","publisher":{"@id":"https://aim-env.com/#org"}},
+ {"@type":"Organization","@id":"https://aim-env.com/#org","name":"AIM Environmental Health & Safety","alternateName":"AIM EHS","url":"https://aim-env.com/","sameAs":["https://hub.aim-env.com/"]}
+]}
+</script>
 <style>
 :root{
   --bg:#f5f7fb; --panel:#ffffff; --panel2:#fbfcfe; --ink:#16202e; --muted:#5d6b7e; --line:#e7ecf3;
@@ -253,6 +267,34 @@ footer{border-top:1px solid var(--line);padding:18px 0;color:var(--muted);font-s
 .pbody li{margin:3px 0;line-height:1.5}
 .pbody hr{border:0;border-top:1px solid var(--line);margin:14px 0}
 .pbody .cite{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;color:var(--accent);background:rgba(127,127,127,.10);padding:0 4px;border-radius:4px;white-space:normal;word-break:break-word}
+button.citelink{cursor:pointer;border:0;font:inherit;text-decoration:none;transition:background .12s}
+button.citelink:hover{background:rgba(14,165,233,.18);text-decoration:underline}
+
+/* clickable-cite reference panel (#4) */
+.refpanel{position:fixed;top:0;right:0;width:min(600px,100vw);height:100dvh;background:var(--panel);border-left:1px solid var(--line);z-index:300;display:flex;flex-direction:column;box-shadow:-14px 0 44px rgba(0,0,0,.30);transform:translateX(105%);transition:transform .22s ease}
+.refpanel.open{transform:translateX(0)}
+.refhead{display:flex;gap:8px;align-items:center;padding:11px 14px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.refhead .rtitle{font-weight:800;font-size:14px;flex:1;min-width:140px}
+.refhead .btn{padding:6px 10px;font-size:12px}
+.refbody{padding:14px 16px;overflow:auto;white-space:pre-wrap;font-size:13.5px;line-height:1.6;user-select:text;-webkit-user-select:text;flex:1}
+.refbody mark{background:rgba(230,160,60,.35);color:inherit;border-radius:3px;padding:0 2px}
+.refback{display:none}
+@media(max-width:1100px){.refpanel{width:100vw}.refback{display:inline-flex}}
+
+/* CFR browse drill-down (#5) */
+.browse{margin:4px 0 10px}
+.bgrid{display:flex;flex-direction:column;gap:5px;margin-top:8px;max-height:430px;overflow:auto;padding-right:4px}
+.bnode{display:flex;align-items:center;gap:8px;text-align:left;background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:8px 11px;font-size:13px;cursor:pointer;color:var(--ink)}
+.bnode:hover{border-color:var(--accent)}
+.bnode .bt{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);min-width:58px}
+.bnode.rsv{opacity:.45;cursor:default}
+.bnode.rsv:hover{border-color:var(--line)}
+.bact{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 2px}
+
+/* link back to the main site (#3/#6) */
+.backlink{margin:12px 2px 0;font-size:12.5px;color:var(--muted)}
+.backlink a{color:var(--accent);font-weight:600;text-decoration:none}
+.backlink a:hover{text-decoration:underline}
 
 /* tickets parity + expert title + delete */
 .pscol{display:flex;flex-direction:column;line-height:1.15;gap:1px}
@@ -286,7 +328,7 @@ footer{border-top:1px solid var(--line);padding:18px 0;color:var(--muted);font-s
       <div class="thememenu" id="themeMenu"></div>
     </div>
     <div class="acct" id="acct"><button class="linkbtn" id="signinBtn">Sign in</button></div>
-    <a class="cta" href="https://aim-env.com/ehs-hub/" target="_blank" rel="noopener"><span class="cta-lg">Get deadline alerts →</span><span class="cta-sm">Alerts →</span></a>
+    <a class="cta" href="https://aim-env.com/" title="LDAR, mold & EHS compliance services from AIM EH&S"><span class="cta-lg">aim-env.com →</span><span class="cta-sm">aim-env.com →</span></a>
   </div>
   <div class="tabs"><div class="tabs wrap2" id="tabs"></div></div>
 </header>
@@ -297,6 +339,7 @@ footer{border-top:1px solid var(--line);padding:18px 0;color:var(--muted);font-s
     <div class="hero">
       <h1>EHS Compliance Command Center</h1>
       <p>What changed, what's due, and what to do about it — for the people who actually file the report. Federal Register rule changes in plain English, a live reporting-deadline calendar, and tools to check enforcement, look up rule text, and ask compliance questions. Updated daily.</p>
+      <p class="backlink" style="margin-top:8px">Free EHS tools from <a href="https://aim-env.com/">AIM Environmental Health &amp; Safety — LDAR, mold &amp; compliance services at aim-env.com ↗</a></p>
     </div>
     <div id="facBanner"></div>
 
@@ -334,11 +377,20 @@ footer{border-top:1px solid var(--line);padding:18px 0;color:var(--muted);font-s
   <section class="panel" id="p-rules">
   <div class="card tool">
     <h2>Rule-text lookup</h2>
-    <p class="lead">Search by citation (e.g. <b>40 CFR 98.2</b>, <b>63 Subpart H</b>) or in plain English (e.g. <b>greenhouse gas reporting</b>, <b>equipment leaks</b>). Text comes straight from the official eCFR.</p>
-    <div class="rsearch"><input type="text" id="rQ" placeholder="Citation or keyword…" autocomplete="off"><button class="btn" id="rBtn">Search</button></div>
+    <p class="lead">Search by citation (e.g. <b>40 CFR 98.2</b>, <b>63 Subpart H</b>), a nickname (<b>MON</b>, <b>HON</b>, <b>Method 21</b>, <b>LDAR subpart FFFF</b>), or plain English (<b>equipment leaks</b>) — or browse the CFR like the eCFR site, from the title on down. Text comes straight from the official eCFR.</p>
+    <div class="rsearch"><input type="text" id="rQ" placeholder="Citation, nickname, or keyword…" autocomplete="off"><button class="btn" id="rBtn">Search</button></div>
     <div id="rSugg" class="rsugg"></div>
     <div id="rRecent" class="rsugg"></div>
+    <div class="browse">
+      <button class="btn ghost" id="bToggle">📖 Browse the CFR by title ▾</button>
+      <div id="bWrap" style="display:none">
+        <div id="bCrumb" class="rsugg" style="margin-top:10px"></div>
+        <div id="bKids" class="bgrid"></div>
+        <div class="note" id="bNote" style="margin-top:8px"></div>
+      </div>
+    </div>
     <div class="answer" id="rA"></div>
+    <p class="backlink">Need hands-on help with what you find here? <a href="https://aim-env.com/">AIM EH&S — LDAR, mold &amp; compliance services at aim-env.com ↗</a></p>
   </div>
 </section>
 
@@ -350,6 +402,7 @@ footer{border-top:1px solid var(--line);padding:18px 0;color:var(--muted);font-s
     <div id="pSugg" class="rsugg"></div>
     <div class="rsearch" style="margin-top:8px"><input type="text" id="pQ" placeholder="Or type:  title part subpart   (e.g. 40 63 H)" autocomplete="off"><button class="btn" id="pBtn">Generate</button></div>
     <div class="answer" id="pA"></div>
+    <p class="backlink">Want this program run for you? <a href="https://aim-env.com/">AIM EH&S — LDAR &amp; compliance services at aim-env.com ↗</a></p>
   </div>
 </section>
 
@@ -385,6 +438,17 @@ footer{border-top:1px solid var(--line);padding:18px 0;color:var(--muted);font-s
     <b>How to read this:</b> Summaries distill the official abstract for orientation — not legal advice. The assistant and rule-lookup tools surface information to help you find the rule faster; they don't replace it. Deadlines shown are well-known federal statutory dates; <b>your facility's actual obligations and dates depend on your permits, your state program, and the current rule.</b> Always verify against the <b>primary source</b> — the linked Federal Register document and the governing CFR text at eCFR.gov. Enforcement data is from EPA's ECHO; regulations change, so confirm current requirements before acting.
   </div>
 </main>
+
+<aside class="refpanel" id="refPanel" aria-hidden="true">
+  <div class="refhead">
+    <button class="btn ghost refback" id="refBack">← Back</button>
+    <span class="rtitle" id="refTitle">Reference</span>
+    <a class="btn ghost" id="refEcfr" target="_blank" rel="noopener" href="https://www.ecfr.gov/">eCFR ↗</a>
+    <button class="btn ghost" id="refPrint">Print</button>
+    <button class="btn ghost" id="refClose" title="Close" aria-label="Close reference panel">✕</button>
+  </div>
+  <div class="refbody" id="refBody"></div>
+</aside>
 
 <footer>© <span id="yr"></span> Atmospheric Integrity Management, LLC · AIM™ Environmental Health &amp; Safety · <a href="https://aim-env.com" target="_blank" rel="noopener">aim-env.com</a></footer>
 <div class="toast" id="toast"></div>
@@ -530,9 +594,10 @@ $("#enfBtn").onclick=async()=>{
     const r=await fetch(FN+"echo",{method:"POST",headers:HDRS,body:JSON.stringify({state:st,naics:$("#enfNaics").value,major:$("#enfMajor").checked})});
     const d=await r.json();
     if(d.facilities&&d.facilities.length){
-      a.innerHTML='<h4>'+esc(d.count||d.facilities.length)+' facilities in '+esc(st)+'</h4>'+d.facilities.map(f=>`<div class="efac"><div class="en">${esc(f.name||"(facility)")}</div><div class="em">${esc(f.city||"")}${f.city?", ":""}${esc(f.state||st)}${f.naics?" · NAICS "+esc(f.naics):""}</div><div class="ep">${f.status?'<span>Status: <b>'+esc(f.status)+'</b></span>':""}${f.inspections?'<span>Inspections: <b>'+esc(f.inspections)+'</b></span>':""}${f.penalties?'<span>Penalties: <b>'+esc(f.penalties)+'</b></span>':""}${f.lastInspection?'<span>Last insp: <b>'+esc(f.lastInspection)+'</b></span>':""}</div>${f.dfr?'<a class="src" href="'+esc(f.dfr)+'" target="_blank" rel="noopener" style="font-size:12px">Detailed facility report ↗</a>':""}</div>`).join("")+'<div class="note">Source: EPA ECHO. <a href="'+esc(d.link)+'" target="_blank" rel="noopener">Open full results on EPA ECHO ↗</a></div>';
+      var snap=d.cached&&d.fetched_at?'<div class="note" style="margin:0 0 8px">📸 Snapshot from EPA ECHO, saved '+esc(String(d.fetched_at).slice(0,10))+(d.stale?' — EPA is limiting live queries right now, so you\'re seeing the most recent saved result. The link below is always current.':'')+'</div>':"";
+      a.innerHTML='<h4>'+esc(d.count||d.facilities.length)+' facilities in '+esc(st)+'</h4>'+snap+d.facilities.map(f=>`<div class="efac"><div class="en">${esc(f.name||"(facility)")}</div><div class="em">${esc(f.city||"")}${f.city?", ":""}${esc(f.state||st)}${f.naics?" · NAICS "+esc(f.naics):""}</div><div class="ep">${f.status?'<span>Status: <b>'+esc(f.status)+'</b></span>':""}${f.inspections?'<span>Inspections: <b>'+esc(f.inspections)+'</b></span>':""}${f.penalties?'<span>Penalties: <b>'+esc(f.penalties)+'</b></span>':""}${f.lastInspection?'<span>Last insp: <b>'+esc(f.lastInspection)+'</b></span>':""}</div>${f.dfr?'<a class="src" href="'+esc(f.dfr)+'" target="_blank" rel="noopener" style="font-size:12px">Detailed facility report ↗</a>':""}</div>`).join("")+'<div class="note">Source: EPA ECHO. <a href="'+esc(d.link)+'" target="_blank" rel="noopener">Open full results on EPA ECHO ↗</a></div>';
     }else{
-      a.innerHTML='<div class="note">EPA\'s ECHO API is rate-limiting automated requests right now, so live results aren\'t loading in-app. Your search is ready on the official ECHO site — always current and authoritative:</div><div style="margin-top:10px"><a class="btn" href="'+esc(d.link||("https://echo.epa.gov/facilities/facility-search/results?p_st="+st))+'" target="_blank" rel="noopener">Open '+esc(st)+' results on EPA ECHO ↗</a></div>';
+      a.innerHTML='<div class="note"><b>Why no results?</b> EPA allows each server about 300 ECHO lookups per hour, and our host\'s shared allowance is used up at the moment — nothing is broken on your end, and it usually clears within the hour. Once one search gets through, the Hub saves a snapshot so later searches load instantly. Your exact search is always available on EPA\'s official site:</div><div style="margin-top:10px"><a class="btn" href="'+esc(d.link||("https://echo.epa.gov/facilities/facility-search/results?p_st="+st))+'" target="_blank" rel="noopener">Open '+esc(st)+' results on EPA ECHO ↗</a></div>';
     }
   }catch(e){a.innerHTML='<div class="note">Network error. <a href="https://echo.epa.gov/facilities/facility-search/results?p_st='+esc(st)+'" target="_blank" rel="noopener">Search on EPA ECHO ↗</a></div>';}
   b.disabled=false;b.textContent="Search ECHO";
@@ -570,16 +635,39 @@ function parseCite(input){
   if(!m||!m[2])return null;
   return {title:m[1]||"40",part:m[2],section:m[3]?(m[2]+"."+m[3]):"",subpart:m[4]||""};
 }
+function goTab(p){var b=$$(".tab").find(function(x){return x.dataset.p===p;});if(b)b.click();}
+function aliasFor(v){
+  var s=v.toLowerCase().replace(/[^a-z0-9 .\-]/g," ").replace(/\s+/g," ").trim();
+  if(/^(the )?mon$|^miscellaneous organic/.test(s))return [{label:"40 CFR 63 Subpart FFFF — Miscellaneous Organic NESHAP (the MON)",p:{title:"40",part:"63",subpart:"FFFF"}}];
+  if(/^(the )?hon$|^hazardous organic/.test(s))return [
+    {label:"40 CFR 63 Subpart F — HON: applicability & general (SOCMI)",p:{title:"40",part:"63",subpart:"F"}},
+    {label:"40 CFR 63 Subpart G — HON: vents, storage, transfer, wastewater",p:{title:"40",part:"63",subpart:"G"}},
+    {label:"40 CFR 63 Subpart H — HON: equipment leaks (LDAR)",p:{title:"40",part:"63",subpart:"H"}}];
+  if(/^(epa )?method 21$|^m21$|^method 21 |reference method 21/.test(s))return [{label:"40 CFR Part 60, Appendix A-7 — Method 21: VOC leak determination",p:{title:"40",part:"60",appendix:"Appendix A-7 to Part 60",find:"Method 21—Determination"}}];
+  if(/^(ldar|leaks?|equipment leaks?|fugitives?|fugitive emissions?)$/.test(s))return PSUBS.map(function(x){return {label:x.l,p:{title:x.t,part:x.p,subpart:x.s}};});
+  var m=s.match(/^(?:ldar |leak |nsps |neshap |mact )?subpart ([a-z]{1,4}[0-9a-z]{0,2})$/);
+  if(m){var sub=m[1].toUpperCase();return ["63","60","65","98"].map(function(pt){return {label:"40 CFR "+pt+" Subpart "+sub,p:{title:"40",part:pt,subpart:sub}};});}
+  return null;
+}
+function showROptions(list,fromQ){
+  var a=$("#rA");a.classList.add("show");
+  a.innerHTML='<h4>Did you mean…</h4>'+(fromQ?'<div class="note" style="margin:0 0 8px">A few rules match “'+esc(fromQ)+'” — pick the one you want:</div>':"")+'<div class="rsugg">'+list.map(function(o,i){return '<button class="chip" data-ro="'+i+'">'+esc(String(o.label).replace(/<[^>]+>/g,""))+'</button>';}).join("")+'</div>';
+  $$("#rA [data-ro]").forEach(function(b){b.onclick=function(){doRuleLookup(list[+b.dataset.ro].p);};});
+}
 async function doRuleLookup(p){
   var a=$("#rA"),b=$("#rBtn");b.disabled=true;b.innerHTML='<span class="spin"></span>';a.classList.add("show");a.innerHTML='<span class="note">Pulling current text from the official eCFR…</span>';
   try{
-    var body=p.q?{q:p.q}:{title:p.title||"40",part:p.part,section:p.section||"",subpart:p.subpart||""};
+    var body=p.q?{q:p.q}:{title:p.title||"40",part:p.part,section:p.section||"",subpart:p.subpart||"",appendix:p.appendix||"",find:p.find||""};
     var r=await fetch(FN+"ecfr",{method:"POST",headers:HDRS,body:JSON.stringify(body)});
     var d=await r.json();
-    if(d.text){
+    if(d.options&&d.options.length){
+      showROptions(d.options.map(function(o){return {label:o.label,p:{title:o.title,part:o.part,section:o.section||"",subpart:o.subpart||""}};}),d.matchedFrom);
+    }else if(d.text){
       rAddRecent(d.citation,p);
-      a.innerHTML='<h4>'+esc(d.citation)+' <span style="color:var(--muted);font-weight:600;text-transform:none;letter-spacing:0">· current as of '+esc(d.date)+'</span></h4>'+(d.matchedFrom?'<div class="note" style="margin:0 0 8px">Matched from “'+esc(d.matchedFrom)+'” — confirm it’s the rule you mean.</div>':"")+'<div class="cfrtext">'+esc(d.text)+(d.truncated?"\n\n…(truncated — open the full text via the link)":"")+'</div><div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap"><a class="btn ghost" href="'+esc(d.url)+'" target="_blank" rel="noopener">Open on eCFR.gov ↗</a><button class="btn ghost" id="rSumm">Plain-English summary</button></div><div class="answer" id="rSummA" style="margin-top:10px"></div><div class="note" style="margin-top:8px">Official source: eCFR.gov, current as of '+esc(d.date)+'. Regulations change — confirm against the governing rule before relying on this.</div>';
+      var pktBtn=(d.subpart&&!d.section&&String(d.title)==="40")?'<button class="btn" id="rToPacket">📋 Auto-create the requirements packet →</button>':"";
+      a.innerHTML='<h4>'+esc(d.citation)+' <span style="color:var(--muted);font-weight:600;text-transform:none;letter-spacing:0">· current as of '+esc(d.date)+'</span></h4>'+(d.matchedFrom?'<div class="note" style="margin:0 0 8px">Matched from “'+esc(d.matchedFrom)+'” — confirm it’s the rule you mean.</div>':"")+'<div class="cfrtext">'+esc(d.text)+(d.truncated?"\n\n…(truncated — open the full text via the link)":"")+'</div><div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap"><a class="btn ghost" href="'+esc(d.url)+'" target="_blank" rel="noopener">Open on eCFR.gov ↗</a><button class="btn ghost" id="rSumm">Plain-English summary</button>'+pktBtn+'</div><div class="answer" id="rSummA" style="margin-top:10px"></div><div class="note" style="margin-top:8px">Official source: eCFR.gov, current as of '+esc(d.date)+'. Regulations change — confirm against the governing rule before relying on this.</div>';
       var sb=$("#rSumm");if(sb)sb.onclick=function(){summarizeCfr(d.citation,d.text);};
+      var pb=$("#rToPacket");if(pb)pb.onclick=function(){goTab("packet");doPacket({t:String(d.title),p:String(d.part),s:String(d.subpart)});};
     }else{
       a.innerHTML='<div class="empty">'+esc(d.error||"Couldn’t find that. Try a citation like 40 CFR 98.2, or a keyword like “greenhouse gas reporting”.")+'</div>';
     }
@@ -594,10 +682,57 @@ async function summarizeCfr(cite,text){
     sa.innerHTML=d.answer?'<h4>Plain-English summary</h4><div>'+mdLite(d.answer)+'</div><div class="note">Summary generated from the eCFR text — orientation only; the rule text above is authoritative.</div>':'<div class="note">Couldn’t summarize right now.</div>';
   }catch(e){sa.innerHTML='<div class="note">Couldn’t summarize right now.</div>';}
 }
-$("#rBtn").onclick=function(){var v=$("#rQ").value.trim();if(!v){$("#rQ").focus();return;}var c=parseCite(v);doRuleLookup(c||{q:v});};
+$("#rBtn").onclick=function(){var v=$("#rQ").value.trim();if(!v){$("#rQ").focus();return;}var al=aliasFor(v);if(al){if(al.length===1)doRuleLookup(al[0].p);else showROptions(al,v);return;}var c=parseCite(v);doRuleLookup(c||{q:v});};
 $("#rQ").addEventListener("input",renderRSugg);
 $("#rQ").addEventListener("keydown",function(e){if(e.key==="Enter")$("#rBtn").click();});
 renderRSugg();
+
+/* ---------- CFR BROWSE — eCFR-style drill-down (#5) ---------- */
+var BTITLES=[["40","Title 40 — Environmental Protection (EPA)"],["29","Title 29 — Labor (OSHA)"],["49","Title 49 — Transportation (DOT / PHMSA)"]];
+var BS={title:null,path:[],cache:{}};
+var BTYPE={T:"Title",C:"Chapter",S:"Subch.",P:"Part",U:"Subpart",G:"Group",s:"§",A:"Appendix"};
+$("#bToggle").onclick=function(){var w=$("#bWrap");var open=w.style.display!=="none";w.style.display=open?"none":"block";$("#bToggle").textContent=open?"📖 Browse the CFR by title ▾":"📖 Browse the CFR by title ▴";if(!open)renderBrowse();};
+async function loadStruct(t){
+  if(BS.cache[t])return BS.cache[t];
+  $("#bKids").innerHTML='<div class="note"><span class="spin"></span> Loading the Title '+esc(t)+' table of contents…</div>';
+  var r=await fetch("struct-"+t+".json");if(!r.ok)throw new Error("struct fetch failed");
+  var d=await r.json();BS.cache[t]=d;return d;
+}
+function bCrumbs(){
+  var parts=['<button class="chip" data-bc="-1">CFR titles</button>'];
+  BS.path.forEach(function(n,i){parts.push('<button class="chip" data-bc="'+i+'">'+esc((BTYPE[n.t]||"")+" "+n.i)+'</button>');});
+  $("#bCrumb").innerHTML=parts.join(" › ");
+  $$("#bCrumb [data-bc]").forEach(function(b){b.onclick=function(){var i=+b.dataset.bc;if(i<0){BS.title=null;BS.path=[];}else{BS.path=BS.path.slice(0,i+1);}renderBrowse();};});
+}
+function bPart(){for(var i=BS.path.length-1;i>=0;i--){if(BS.path[i].t==="P")return BS.path[i].i;}return "";}
+async function renderBrowse(){
+  bCrumbs();var K=$("#bKids"),N=$("#bNote");
+  if(!BS.title){
+    K.innerHTML=BTITLES.map(function(t,i){return '<button class="bnode" data-bn="'+i+'"><span class="bt">Title</span><span>'+esc(t[1])+'</span></button>';}).join("");
+    N.textContent="Pick a title, then drill down — chapter → part → subpart → section, just like the eCFR. Rule text always comes live from the official eCFR.";
+    $$("#bKids [data-bn]").forEach(function(b){b.onclick=async function(){try{BS.title=BTITLES[+b.dataset.bn][0];BS.path=[];var d=await loadStruct(BS.title);BS.path=[{t:"T",i:BS.title,l:d.tree.l,c:d.tree.c}];renderBrowse();}catch(e){$("#bKids").innerHTML='<div class="note">Couldn\'t load that title\'s contents — try again.</div>';BS.title=null;}};});
+    return;
+  }
+  var node=BS.path[BS.path.length-1];
+  var kids=node.c||[];
+  var acts="";
+  if(node.t==="U"){
+    acts='<div class="bact"><button class="btn ghost" id="bOpenSub">Open this subpart’s rule text</button>'+(BS.title==="40"?'<button class="btn" id="bPkt">📋 Auto-create the requirements packet →</button>':"")+'</div>';
+  }
+  K.innerHTML=acts+(kids.length?kids.map(function(n,i){
+    return '<button class="bnode'+(n.r?' rsv':'')+'" data-bk="'+i+'"'+(n.r?' disabled':'')+'><span class="bt">'+esc(BTYPE[n.t]||n.t)+'</span><span>'+esc((n.l||"").replace(/\s+/g," ").trim())+(n.r?" (reserved)":"")+'</span></button>';
+  }).join(""):'<div class="note">No deeper levels here — use the buttons above to open the text.</div>');
+  var dd=BS.cache[BS.title];
+  N.textContent="Structure snapshot from eCFR "+(dd&&dd.date?dd.date:"")+". Rule text itself is always pulled live from eCFR.gov and stamped with its version date.";
+  $$("#bKids [data-bk]").forEach(function(b){b.onclick=function(){
+    var n=kids[+b.dataset.bk];if(!n||n.r)return;
+    if(n.t==="s"){doRuleLookup({title:BS.title,part:n.i.split(".")[0],section:n.i});$("#rA").scrollIntoView({behavior:"smooth",block:"start"});return;}
+    if(n.t==="A"){doRuleLookup({title:BS.title,part:bPart(),appendix:n.i});$("#rA").scrollIntoView({behavior:"smooth",block:"start"});return;}
+    BS.path.push(n);renderBrowse();
+  };});
+  var os=$("#bOpenSub");if(os)os.onclick=function(){doRuleLookup({title:BS.title,part:bPart(),subpart:node.i});$("#rA").scrollIntoView({behavior:"smooth",block:"start"});};
+  var pk=$("#bPkt");if(pk)pk.onclick=function(){goTab("packet");doPacket({t:BS.title,p:bPart(),s:node.i});};
+}
 
 /* ---------- REQUIREMENTS PACKET ---------- */
 var PSUBS=[
@@ -624,7 +759,7 @@ function parsePacket(v){
   if(!/^\d+$/.test(t)||!/^\d+$/.test(p))return null;
   return {t:t,p:p,s:sub};
 }
-function mdCiteWrap(s){return s.replace(/\[(§[^\]]+)\]/g,'<span class="cite">[$1]<\/span>');}
+function mdCiteWrap(s){return s.replace(/\[(§[^\]]+)\]/g,'<button class="cite citelink" data-cite="$1" title="Open this paragraph from the eCFR">[$1]<\/button>');}
 function mdInlineP(s){
   s=esc(s);
   s=s.replace(/\[([^\]]+)\]\((https?:[^)]+)\)/g,'<a href="$2" target="_blank" rel="noopener">$1<\/a>');
@@ -657,8 +792,9 @@ async function doPacket(o){
     var r=await fetch(FN+"req-packet",{method:"POST",headers:HDRS,body:JSON.stringify({title:o.t||"40",part:o.p,subpart:o.s})});
     var d=await r.json();
     if(!d||d.error||!d.packet_md){A.innerHTML='<div class="empty">'+esc((d&&d.error)||"Couldn’t build that packet. Check the part/subpart and try again.")+'</div>';if(B)B.disabled=false;return;}
+    window.__pktCtx={t:String(o.t||"40"),p:String(o.p)};
     var meta='<div class="pmeta">Source: <b>'+esc(d.citation)+'</b> · current eCFR as of <b>'+esc(d.version_date)+'</b> · '+(d.cached?"freshness-checked just now":"freshly generated")+' · <a href="'+esc(d.url)+'" target="_blank" rel="noopener">view on eCFR ↗</a></div>';
-    var disc='<div class="pdisc">Summary generated from the eCFR text — orientation only. Verify against the linked eCFR before relying on it; not legal advice.</div>';
+    var disc='<div class="pdisc">Summary generated from the eCFR text — orientation only. Verify against the linked eCFR before relying on it; not legal advice. <b>Tip:</b> the red § references are clickable — they open the actual rule paragraph beside the packet.</div>';
     A.innerHTML=meta+disc+'<div class="pbody">'+mdPacket(d.packet_md)+'</div><div style="margin-top:10px"><button class="btn ghost" id="pCopy">Copy as text</button></div>';
     var cp=$("#pCopy");if(cp)cp.onclick=function(){navigator.clipboard.writeText(d.packet_md).then(function(){toast("Packet copied");});};
   }catch(e){A.innerHTML='<div class="note">Network error — please try again.</div>';}
@@ -668,6 +804,56 @@ $("#pBtn").onclick=function(){var v=$("#pQ").value.trim();if(!v){$("#pQ").focus(
 $("#pQ").addEventListener("input",renderPSugg);
 $("#pQ").addEventListener("keydown",function(e){if(e.key==="Enter")$("#pBtn").click();});
 renderPSugg();
+
+/* ---------- CLICKABLE § CITES → REFERENCE PANEL (#4) ---------- */
+var REFC={};
+function parseRefCite(c){
+  var m=c.match(/§\s*([0-9]+[A-Za-z]*)\.([0-9][0-9A-Za-z.\-]*)\s*((?:\([0-9A-Za-z]+\))*)/);
+  if(!m)return null;
+  return {part:m[1],section:m[1]+"."+m[2],paras:m[3]?m[3].match(/\([0-9A-Za-z]+\)/g):null};
+}
+function openRef(cite){
+  var P=$("#refPanel");P.classList.add("open");P.setAttribute("aria-hidden","false");
+  $("#refTitle").textContent=cite;
+  var body=$("#refBody");
+  var pr=parseRefCite(cite);
+  if(!pr){body.innerHTML='<div class="note">Couldn’t parse that reference — open it on <a href="https://www.ecfr.gov/" target="_blank" rel="noopener">eCFR.gov ↗</a>.</div>';return;}
+  var t=(window.__pktCtx&&window.__pktCtx.t)||"40";
+  var key=t+"|"+pr.section;
+  $("#refEcfr").href="https://www.ecfr.gov/current/title-"+t+"/section-"+pr.section;
+  if(REFC[key]){renderRef(REFC[key],pr);return;}
+  body.innerHTML='<div class="note"><span class="spin"></span> Pulling §'+esc(pr.section)+' from the official eCFR…</div>';
+  fetch(FN+"ecfr",{method:"POST",headers:HDRS,body:JSON.stringify({title:t,part:pr.part,section:pr.section})}).then(function(r){return r.json();}).then(function(d){
+    if(d&&d.text){REFC[key]=d;renderRef(d,pr);}
+    else{body.innerHTML='<div class="note">'+esc((d&&d.error)||"Couldn’t load that section.")+' <a href="'+esc($("#refEcfr").href)+'" target="_blank" rel="noopener">Open on eCFR.gov ↗</a></div>';}
+  }).catch(function(){body.innerHTML='<div class="note">Network error — try again, or open it on eCFR.gov via the button above.</div>';});
+}
+function renderRef(d,pr){
+  var body=$("#refBody");
+  var txt=esc(d.text);
+  if(pr&&pr.paras&&pr.paras.length){
+    var first=pr.paras[0].replace(/[()]/g,"");
+    var ix=d.text.indexOf("\n("+first+")");
+    if(ix>=0){
+      var start=ix+1,lineEnd=d.text.indexOf("\n",start);if(lineEnd<0)lineEnd=d.text.length;
+      txt=esc(d.text.slice(0,start))+"<mark>"+esc(d.text.slice(start,lineEnd))+"</mark>"+esc(d.text.slice(lineEnd));
+    }
+  }
+  body.innerHTML='<div class="note" style="margin:0 0 10px">'+esc(d.citation)+' · current eCFR as of '+esc(d.date)+'. Text is selectable — highlight to copy, or use Print above.</div>'+txt+(d.truncated?'\n\n<span class="note">…truncated — <a href="'+esc(d.url)+'" target="_blank" rel="noopener">full text on eCFR.gov ↗</a></span>':"");
+  var mk=body.querySelector("mark");if(mk)setTimeout(function(){mk.scrollIntoView({block:"center"});},80);else body.scrollTop=0;
+}
+function closeRef(){var P=$("#refPanel");P.classList.remove("open");P.setAttribute("aria-hidden","true");}
+$("#refClose").onclick=closeRef;$("#refBack").onclick=closeRef;
+document.addEventListener("keydown",function(e){if(e.key==="Escape")closeRef();});
+$("#refPrint").onclick=function(){
+  var w=window.open("","_blank");if(!w){toast("Allow pop-ups to print");return;}
+  w.document.write('<html><head><title>'+esc($("#refTitle").textContent)+'</title><style>body{font:13px/1.6 system-ui;white-space:pre-wrap;padding:24px;max-width:760px;margin:auto}mark{background:#ffe9a8}</style></head><body><h3>'+esc($("#refTitle").textContent)+'</h3>'+$("#refBody").innerHTML+'</body></html>');
+  w.document.close();w.focus();setTimeout(function(){w.print();},150);
+};
+document.addEventListener("click",function(e){
+  var b=e.target&&e.target.closest?e.target.closest("button.citelink"):null;
+  if(b&&b.dataset.cite)openRef(b.dataset.cite);
+});
 
 /* ---------- ACCOUNTS (Supabase Auth) ---------- */
 window.__custom=window.__custom||{pinned:new Set(),hidden:new Set(),ack:new Set()};
