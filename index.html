@@ -244,7 +244,7 @@ footer{border-top:1px solid var(--line);padding:18px 0;color:var(--muted);font-s
 /* requirements packet */
 .pmeta{font-size:13px;color:var(--muted);margin:0 0 8px;line-height:1.5}
 .pdisc{font-size:12.5px;background:rgba(226,71,81,.10);border:1px solid rgba(226,71,81,.35);color:var(--ink);padding:7px 10px;border-radius:8px;margin:0 0 12px}
-.pbody{white-space:normal}
+.pbody{white-space:normal;overflow-wrap:anywhere;word-break:break-word;max-width:100%}
 .pbody h2{font-size:18px;margin:18px 0 6px;border-bottom:1px solid var(--line);padding-bottom:4px}
 .pbody h3{font-size:15.5px;margin:14px 0 4px;color:var(--accent)}
 .pbody h4,.pbody h5,.pbody h6{font-size:14px;margin:10px 0 3px}
@@ -252,7 +252,7 @@ footer{border-top:1px solid var(--line);padding:18px 0;color:var(--muted);font-s
 .pbody ul{margin:5px 0 8px;padding-left:20px}
 .pbody li{margin:3px 0;line-height:1.5}
 .pbody hr{border:0;border-top:1px solid var(--line);margin:14px 0}
-.pbody .cite{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;color:var(--accent);background:rgba(127,127,127,.10);padding:0 4px;border-radius:4px;white-space:nowrap}
+.pbody .cite{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;color:var(--accent);background:rgba(127,127,127,.10);padding:0 4px;border-radius:4px;white-space:normal;word-break:break-word}
 
 /* tickets parity + expert title + delete */
 .pscol{display:flex;flex-direction:column;line-height:1.15;gap:1px}
@@ -591,7 +591,7 @@ async function summarizeCfr(cite,text){
   try{
     var r=await fetch(FN+"ask-hub",{method:"POST",headers:HDRS,body:JSON.stringify({question:"In plain English for a compliance manager, summarize "+cite+" — what it requires and who it applies to. Rule text follows:\n\n"+(text||"").slice(0,4000)})});
     var d=await r.json();
-    sa.innerHTML=d.answer?'<h4>Plain-English summary</h4><div>'+mdLite(d.answer)+'</div><div class="note">Orientation only — the rule text above is authoritative.</div>':'<div class="note">Couldn’t summarize right now.</div>';
+    sa.innerHTML=d.answer?'<h4>Plain-English summary</h4><div>'+mdLite(d.answer)+'</div><div class="note">Summary generated from the eCFR text — orientation only; the rule text above is authoritative.</div>':'<div class="note">Couldn’t summarize right now.</div>';
   }catch(e){sa.innerHTML='<div class="note">Couldn’t summarize right now.</div>';}
 }
 $("#rBtn").onclick=function(){var v=$("#rQ").value.trim();if(!v){$("#rQ").focus();return;}var c=parseCite(v);doRuleLookup(c||{q:v});};
@@ -657,9 +657,9 @@ async function doPacket(o){
     var r=await fetch(FN+"req-packet",{method:"POST",headers:HDRS,body:JSON.stringify({title:o.t||"40",part:o.p,subpart:o.s})});
     var d=await r.json();
     if(!d||d.error||!d.packet_md){A.innerHTML='<div class="empty">'+esc((d&&d.error)||"Couldn’t build that packet. Check the part/subpart and try again.")+'</div>';if(B)B.disabled=false;return;}
-    var meta='<div class="pmeta">Source: <b>'+esc(d.citation)+'</b> · current eCFR as of <b>'+esc(d.version_date)+'</b> · '+(d.cached?"freshness-checked just now":"freshly generated")+' · model '+esc(d.model)+' · <a href="'+esc(d.url)+'" target="_blank" rel="noopener">view on eCFR ↗</a></div>';
-    var disc='<div class="pdisc">⚠ AI-generated orientation summary — always verify against the linked eCFR before relying on it for compliance.</div>';
-    A.innerHTML=meta+disc+'<div class="cfrtext pbody">'+mdPacket(d.packet_md)+'</div><div style="margin-top:10px"><button class="btn ghost" id="pCopy">Copy as text</button></div>';
+    var meta='<div class="pmeta">Source: <b>'+esc(d.citation)+'</b> · current eCFR as of <b>'+esc(d.version_date)+'</b> · '+(d.cached?"freshness-checked just now":"freshly generated")+' · <a href="'+esc(d.url)+'" target="_blank" rel="noopener">view on eCFR ↗</a></div>';
+    var disc='<div class="pdisc">Summary generated from the eCFR text — orientation only. Verify against the linked eCFR before relying on it; not legal advice.</div>';
+    A.innerHTML=meta+disc+'<div class="pbody">'+mdPacket(d.packet_md)+'</div><div style="margin-top:10px"><button class="btn ghost" id="pCopy">Copy as text</button></div>';
     var cp=$("#pCopy");if(cp)cp.onclick=function(){navigator.clipboard.writeText(d.packet_md).then(function(){toast("Packet copied");});};
   }catch(e){A.innerHTML='<div class="note">Network error — please try again.</div>';}
   if(B)B.disabled=false;
@@ -783,10 +783,11 @@ function avatarHTML(name,photo,sme){
   var img=photo?'<img src="'+esc(photo)+'" alt="">':'<span>'+esc(initials)+'</span>';
   return '<span class="avatar">'+img+'</span>';
 }
-function adminDelBtn(id){return '<button class="delpost" data-del="'+id+'" title="Delete (admin)">🗑</button>';}
+function canDel(p){return !!(window.__USER&&p&&(isAdminUser()||p.user_id===window.__USER.id));}
+function adminDelBtn(id){return '<button class="delpost" data-del="'+id+'" title="Delete post">🗑</button>';}
 async function adminDeletePost(id){
-  if(!confirm("Delete this post? It will be hidden from the community (soft delete — reversible)."))return;
-  try{await sbc.from("community_posts").update({status:"deleted"}).eq("id",id);toast("Post deleted");loadCommunity();}catch(e){toast("Delete failed: "+(e.message||e));}
+  if(!confirm("Delete this post? It will be removed from the community."))return;
+  try{var res=await sbc.rpc("soft_delete_post",{p_id:id});if(res.error)throw res.error;if(res.data===false){toast("You can only delete your own posts.");return;}toast("Post deleted");loadCommunity();}catch(e){toast("Delete failed: "+(e.message||e));}
 }
 function poster(p){
   if(p.anonymous)return '<span class="psr">'+avatarHTML("?",null,false)+'<b>Anonymous</b></span>';
@@ -856,10 +857,10 @@ function renderCommunity(){
     var pend=q.status!=="approved";
     var qa=ans.filter(function(a){return a.parent_id===q.id;}).sort(function(a,b){return new Date(a.created_at)-new Date(b.created_at);});
     return '<div class="card qpost'+(pend?" pend":"")+'">'+
-      '<div class="qhead">'+poster(q)+(pend?'<span class="pendtag">'+(mine?"Awaiting approval":"Pending")+'</span>':'<span class="qtime">'+timeAgo(q.created_at)+'</span>')+(isAdminUser()?adminDelBtn(q.id):"")+'</div>'+
+      '<div class="qhead">'+poster(q)+(pend?'<span class="pendtag">'+(mine?"Awaiting approval":"Pending")+'</span>':'<span class="qtime">'+timeAgo(q.created_at)+'</span>')+(canDel(q)?adminDelBtn(q.id):"")+'</div>'+
       (q.title?'<h3 class="qtitle">'+esc(q.title)+'</h3>':"")+
       '<div class="qbody">'+esc(q.body)+'</div>'+
-      (qa.length?'<div class="answers">'+qa.map(function(a){return '<div class="ans"><div class="qhead">'+poster(a)+'<span class="qtime">'+timeAgo(a.created_at)+'</span>'+(isAdminUser()?adminDelBtn(a.id):"")+'</div><div class="qbody">'+esc(a.body)+'</div></div>';}).join("")+'</div>':"")+
+      (qa.length?'<div class="answers">'+qa.map(function(a){return '<div class="ans"><div class="qhead">'+poster(a)+'<span class="qtime">'+timeAgo(a.created_at)+'</span>'+(canDel(a)?adminDelBtn(a.id):"")+'</div><div class="qbody">'+esc(a.body)+'</div></div>';}).join("")+'</div>':"")+
       (window.__USER?'<div class="answerbox" data-q="'+q.id+'"><button class="linkbtn ansOpen" data-q="'+q.id+'">Answer this</button></div>':"")+
     '</div>';
   }).join("");
@@ -984,7 +985,7 @@ function adminApprovalsHTML(profs){
   }).join("");
   return '<div class="asec"><h3>Pending photos, logos &amp; experts <span class="cnt">'+profs.length+'</span></h3>'+(profs.length?rows:'<p class="note">Nothing waiting.</p>')+'</div>';
 }
-window.__tfilter={status:"all",cat:"all"};
+window.__tfilter={status:"open",cat:"all"};
 function tStatus(t){var s=t.status||"open";return s==="new"?"open":s;}
 function statusMeta(s){return ({open:["Open","sb-open"],in_progress:["In progress","sb-prog"],resolved:["Resolved","sb-res"],closed:["Closed","sb-clo"]})[s]||["Open","sb-open"];}
 function adminTicketsHTML(){
