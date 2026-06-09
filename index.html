@@ -495,7 +495,7 @@ const THEMES=[{id:"light",name:"Light",sw:"#2563eb"},{id:"dark",name:"Dark comma
 const CYBER={id:"cyber",name:"⚡ Cyberpunk 80s",sw:"#ff2bd6"};
 function cyberUnlocked(){return localStorage.getItem("hubCyber")==="1";}
 function availThemes(){return cyberUnlocked()?[...THEMES,CYBER]:THEMES.slice();}
-function applyTheme(id){document.documentElement.dataset.theme=id;localStorage.setItem("hubTheme",id);const t=[...THEMES,CYBER].find(x=>x.id===id)||THEMES[0];$("#themeName").textContent=t.name.replace("⚡ ","");renderThemeMenu();}
+function applyTheme(id){var prev=document.documentElement.dataset.theme;if(id!=="cyber"&&cyberUnlocked()){localStorage.removeItem("hubCyber");if(prev==="cyber")toast("⚡ Secret theme re-locked — you know the code");}document.documentElement.dataset.theme=id;localStorage.setItem("hubTheme",id);const t=[...THEMES,CYBER].find(x=>x.id===id)||THEMES[0];$("#themeName").textContent=t.name.replace("⚡ ","");renderThemeMenu();}
 function renderThemeMenu(){const m=$("#themeMenu");const cur=document.documentElement.dataset.theme;m.innerHTML=availThemes().map(t=>`<div data-t="${t.id}"><span class="swatch" style="background:${t.sw}"></span>${t.name}${t.id===cur?" ✓":""}</div>`).join("");$$("#themeMenu div").forEach(d=>d.onclick=()=>{applyTheme(d.dataset.t);m.classList.remove("open");});}
 $("#themeToggle").onclick=e=>{e.stopPropagation();$("#themeMenu").classList.toggle("open");};
 document.addEventListener("click",()=>$("#themeMenu").classList.remove("open"));
