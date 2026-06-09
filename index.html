@@ -516,7 +516,7 @@ $("#rBtn").onclick=async()=>{
 
 /* ---------- ACCOUNTS (Supabase Auth) ---------- */
 window.__custom=window.__custom||{pinned:new Set(),hidden:new Set(),ack:new Set()};
-const sbc = window.supabase ? window.supabase.createClient(SB, KEY) : null;
+const sbc = window.supabase ? window.supabase.createClient(SB, KEY, {auth:{persistSession:true,autoRefreshToken:true,lock:async function(n,t,fn){return await fn();}}}) : null;
 function activeSection(){const t=document.querySelector('.tab[aria-selected="true"]');return t?t.dataset.p:"dashboard";}
 const authBg=$("#authBg");let authMode="signin";
 function paintAuth(){
@@ -534,26 +534,30 @@ authBg.onclick=e=>{if(e.target===authBg)closeAuth();};
 $("#toSignup").onclick=()=>{authMode=(authMode==="signup")?"signin":"signup";$("#authMsg").className="msg";paintAuth();};
 $("#toForgot").onclick=()=>{authMode="forgot";$("#authMsg").className="msg";paintAuth();};
 async function doAuth(){
-  if(!sbc){authMsg("Sign-in is loading — refresh and try again.");return;}
+  if(!sbc){authMsg("Still loading — refresh and try again.");return;}
   const email=$("#authEmail").value.trim(),pw=$("#authPw").value;
   if(!email){authMsg("Enter your email.");return;}
+  if(authMode!=="forgot"&&(!pw||pw.length<6)){authMsg("Enter a password (6+ characters).");return;}
   const b=$("#authSubmit"),old=b.textContent;b.disabled=true;b.innerHTML='<span class="spin"></span>';
+  $("#authMsg").textContent="";$("#authMsg").className="msg";
+  const TO=function(ms){return new Promise(function(_,r){setTimeout(function(){r(new Error("timeout"));},ms);});};
   try{
+    var res;
     if(authMode==="forgot"){
-      const {error}=await sbc.auth.resetPasswordForEmail(email,{redirectTo:location.origin});
-      if(error)authMsg(error.message);else authMsg("Check your email for a reset link.",true);
+      res=await Promise.race([sbc.auth.resetPasswordForEmail(email,{redirectTo:location.origin}),TO(15000)]);
+      if(res.error)authMsg(res.error.message);else authMsg("Check your email for a reset link.",true);
     }else if(authMode==="signup"){
-      if(!pw||pw.length<6){authMsg("Password must be at least 6 characters.");b.disabled=false;b.textContent=old;return;}
-      const {data,error}=await sbc.auth.signUp({email,password:pw});
-      if(error)authMsg(error.message);
-      else if(data.session){authMsg("Welcome — you're in!",true);onAuth(data.session);setTimeout(closeAuth,600);}
+      res=await Promise.race([sbc.auth.signUp({email:email,password:pw}),TO(15000)]);
+      if(res.error)authMsg(res.error.message);
+      else if(res.data&&res.data.session){authMsg("Welcome — you're in.",true);onAuth(res.data.session);setTimeout(closeAuth,500);}
       else authMsg("Account created — check your email to confirm, then sign in.",true);
     }else{
-      const {data,error}=await sbc.auth.signInWithPassword({email,password:pw});
-      if(error){authMsg(error.message);}else{if(data&&data.session)onAuth(data.session);authMsg("Signed in ✓",true);setTimeout(closeAuth,400);}
+      res=await Promise.race([sbc.auth.signInWithPassword({email:email,password:pw}),TO(15000)]);
+      if(res.error){authMsg(res.error.message);}
+      else{authMsg("Signed in ✓",true);if(res.data&&res.data.session)onAuth(res.data.session);setTimeout(closeAuth,400);}
     }
-  }catch(e){authMsg("Something went wrong — try again.");}
-  b.disabled=false;b.textContent=old;paintAuth();
+  }catch(e){authMsg((e&&e.message==="timeout")?"Timed out — check your connection and try again.":"Couldn't connect — try again.");}
+  finally{b.disabled=false;b.textContent=old;}
 }
 $("#authSubmit").onclick=doAuth;
 $("#authEmail").addEventListener("keydown",e=>{if(e.key==="Enter")doAuth();});
@@ -585,7 +589,7 @@ async function onAuth(session){
   if(window.__USER)await loadProfileFromAccount();
   renderFacBanner();renderFeed();
 }
-if(sbc){sbc.auth.getSession().then(({data})=>onAuth(data.session));sbc.auth.onAuthStateChange((_e,s)=>onAuth(s));}
+if(sbc){sbc.auth.getSession().then(({data})=>{setTimeout(function(){onAuth(data.session);},0);});sbc.auth.onAuthStateChange(function(_e,s){setTimeout(function(){onAuth(s);},0);});}
 else{renderAcct();renderFeedbackBody();}
 
 /* ---------- FEEDBACK (gated behind login) ---------- */
