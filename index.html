@@ -150,7 +150,7 @@ footer{border-top:1px solid var(--line);padding:18px 0;color:var(--muted);font-s
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 .empty{color:var(--muted);padding:26px;text-align:center}
 .cta .cta-sm{display:none}
-@media(max-width:560px){.hero h1{font-size:22px}.topbar{height:auto;min-height:54px;gap:6px;padding:7px 0}.brand{font-size:14px}.cta{padding:8px 10px}.cta .cta-lg{display:none}.cta .cta-sm{display:inline}.themebtn #themeName{display:none}.themebtn button{padding:8px 9px}.linkbtn{padding:7px 9px;font-size:12px}.acct{gap:5px}.acct .who{max-width:74px}.sec-h .live{font-size:10px}}
+@media(max-width:560px){.hero h1{font-size:22px}.topbar{height:auto;min-height:54px;gap:6px;padding:7px 0}.brand{font-size:14px}.cta{padding:8px 10px}.cta .cta-lg{display:none}.cta .cta-sm{display:inline}.themebtn #themeName{display:none}.themebtn button{padding:8px 9px}.linkbtn{padding:7px 9px;font-size:12px}.acct{gap:5px}.acct .who{display:none}.sec-h .live{font-size:10px}}
 /* accounts + feedback + rule customization */
 .acct{display:flex;align-items:center;gap:6px}
 .acct .who{font-size:12.5px;color:var(--muted);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -233,6 +233,8 @@ footer{border-top:1px solid var(--line);padding:18px 0;color:var(--muted);font-s
 .treply{margin-top:10px;border-top:1px solid var(--line);padding-top:10px}
 .tag{font-size:10.5px;background:var(--chip);color:var(--chip-ink);padding:2px 7px;border-radius:5px;font-weight:700;display:inline-block}
 .tag.ok{background:var(--good);color:#fff}
+.modal .field input{font-size:16px;padding:12px 14px;height:auto}
+.tab[data-p="admin"]{color:var(--brand);font-weight:800}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -544,11 +546,11 @@ async function doAuth(){
       if(!pw||pw.length<6){authMsg("Password must be at least 6 characters.");b.disabled=false;b.textContent=old;return;}
       const {data,error}=await sbc.auth.signUp({email,password:pw});
       if(error)authMsg(error.message);
-      else if(data.session){authMsg("Welcome — you're in!",true);setTimeout(closeAuth,600);}
+      else if(data.session){authMsg("Welcome — you're in!",true);onAuth(data.session);setTimeout(closeAuth,600);}
       else authMsg("Account created — check your email to confirm, then sign in.",true);
     }else{
-      const {error}=await sbc.auth.signInWithPassword({email,password:pw});
-      if(error)authMsg(error.message);else closeAuth();
+      const {data,error}=await sbc.auth.signInWithPassword({email,password:pw});
+      if(error){authMsg(error.message);}else{if(data&&data.session)onAuth(data.session);authMsg("Signed in ✓",true);setTimeout(closeAuth,400);}
     }
   }catch(e){authMsg("Something went wrong — try again.");}
   b.disabled=false;b.textContent=old;paintAuth();
@@ -784,7 +786,7 @@ function buildAdminTab(){
   if(document.querySelector('.tab[data-p="admin"]'))return;
   var b=document.createElement("button");b.className="tab";b.setAttribute("role","tab");b.dataset.p="admin";b.setAttribute("aria-selected","false");b.textContent="● Admin";
   b.onclick=function(){selectTab("admin");loadAdmin();};
-  $("#tabs").appendChild(b);
+  var t=$("#tabs");if(t.children[1])t.insertBefore(b,t.children[1]);else t.appendChild(b);
 }
 async function loadAdmin(){
   var host=$("#adminBody");if(!host||!isAdminUser())return;
