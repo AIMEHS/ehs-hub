@@ -6,7 +6,7 @@ Writes: /tmp/adi_sql/batch_NN.sql (adi_determinations upserts),
         /tmp/adi_sql/subparts.sql  (adi_subparts upserts),
         data/adi.json.gz           (full normalized dataset, for reproducibility/refresh)
 """
-import argparse, gzip, json, os, re
+import argparse, gzip, json, os, re, time
 
 def esc(s):
     return (s or '').replace("'", "''").replace('\x00', '')
@@ -91,7 +91,7 @@ def main():
         part, sub, desc = (m.group(1), m.group(2), m.group(3).strip()) if m else (c.split('-')[0], c.split('-', 1)[1], '')
         label_map[c] = {'part': part, 'subpart': sub, 'description': desc,
                         'n_dets': len(smap.get(optval, []))}
-    artifact = {'source': 'https://cfpub.epa.gov/adi/', 'scraped': '2026-06-10',
+    artifact = {'source': 'https://cfpub.epa.gov/adi/', 'scraped': time.strftime('%Y-%m-%d'),
                 'labels': label_map, 'determinations': recs}
     repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     os.makedirs(os.path.join(repo_root, 'data'), exist_ok=True)

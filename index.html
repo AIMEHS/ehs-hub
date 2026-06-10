@@ -383,6 +383,8 @@ button.citelink:hover{background:rgba(14,165,233,.18);text-decoration:underline}
     <div class="card tool">
       <h2>Enforcement watch</h2>
       <p class="lead">See recent EPA inspections, violations, and penalties from EPA's ECHO database — situational awareness on who's getting hit in your state and industry.</p>
+      <div id="enfGate"></div>
+      <div id="enfTool" style="display:none">
       <div class="row">
         <div class="field" style="max-width:160px"><label>State</label><select id="enfState"></select></div>
         <div class="field" style="max-width:180px"><label>NAICS code (optional)</label><input type="text" id="enfNaics" placeholder="e.g. 324110"></div>
@@ -390,6 +392,7 @@ button.citelink:hover{background:rgba(14,165,233,.18);text-decoration:underline}
       </div>
       <button class="btn" id="enfBtn">Search ECHO</button>
       <div class="answer" id="enfA"></div>
+      </div>
     </div>
   </section>
 
@@ -419,9 +422,12 @@ button.citelink:hover{background:rgba(14,165,233,.18);text-decoration:underline}
   <div class="card tool">
     <h2>Requirements packet</h2>
     <p class="lead">Pick a regulation subpart and get a complete, organized rundown of <b>everything it requires</b> — leak definitions, monitoring methods &amp; frequencies, repair timelines, delay-of-repair allowances, exemptions, plus recordkeeping &amp; reporting — with <b>every line cited to the exact eCFR paragraph</b>. Built straight from the official eCFR.</p>
+    <div id="pktGate"></div>
+    <div id="pktTool" style="display:none">
     <div id="pSugg" class="rsugg"></div>
     <div class="rsearch" style="margin-top:8px"><input type="text" id="pQ" placeholder="Or type:  title part subpart   (e.g. 40 63 H)" autocomplete="off"><button class="btn" id="pBtn">Generate</button></div>
     <div class="answer" id="pA"></div>
+    </div>
     <p class="backlink">Want this program run for you? <a href="https://aim-env.com/">AIM EH&S — LDAR &amp; compliance services at aim-env.com ↗</a></p>
   </div>
 </section>
@@ -429,14 +435,15 @@ button.citelink:hover{background:rgba(14,165,233,.18);text-decoration:underline}
   <!-- ADI — APPLICABILITY DETERMINATIONS -->
   <section class="panel" id="p-adi">
   <div class="card tool">
-    <h2>Applicability determinations (ADI)</h2>
-    <p class="lead">Search EPA's <b>Applicability Determination Index</b> — 3,600+ official EPA letters and memos answering real-world questions on applicability, monitoring, recordkeeping, and reporting under NSPS, NESHAP/MACT, asbestos, woodstoves, and CFC rules. EPA's own ADI site is notoriously hard to use; here you can search it like a search engine — by keyword, subpart, or category — and every result links to EPA's original letter.</p>
+    <h2>ADI Index — EPA applicability determinations</h2>
+    <p class="lead">Search EPA's <b>Applicability Determination Index</b> — 3,800+ official EPA letters and memos answering real-world questions on applicability, monitoring, recordkeeping, and reporting under NSPS, NESHAP/MACT, asbestos, woodstoves, and CFC rules. EPA's own ADI site is notoriously hard to use; here you can search it like a search engine — by keyword, subpart, or category — and every result links to EPA's original letter. Pick a subpart and hit <b>Subpart packet</b> for a printable digest of every determination under it.</p>
     <div id="adiGate"></div>
     <div id="adiTool" style="display:none">
       <div class="rsearch"><input type="text" id="adiQ" placeholder="Keyword search — e.g. delay of repair, flare monitoring, landfill exceedance…" autocomplete="off"><button class="btn" id="adiBtn">Search</button></div>
       <div class="row">
         <div class="field" style="max-width:420px"><label>Subpart</label><select id="adiSub"><option value="">All subparts</option></select></div>
         <div class="field" style="max-width:200px"><label>Category</label><select id="adiCat"><option value="">All categories</option></select></div>
+        <div class="field" style="max-width:220px;justify-content:flex-end"><button class="btn ghost" id="adiPkt">📋 Subpart packet</button></div>
       </div>
       <div class="answer" id="adiA"></div>
     </div>
@@ -560,7 +567,7 @@ document.addEventListener("touchstart",e=>{const t=e.changedTouches[0];tx=t.scre
 document.addEventListener("touchend",e=>{const t=e.changedTouches[0];const dx=t.screenX-tx,dy=t.screenY-ty;if(Math.max(Math.abs(dx),Math.abs(dy))<28)return;let d=Math.abs(dx)>Math.abs(dy)?(dx>0?"R":"L"):(dy>0?"D":"U");if(d===SWIPE[spos]){spos++;if(spos===SWIPE.length){spos=0;unlockCyber();}}else{spos=(d===SWIPE[0])?1:0;}},{passive:true});
 
 /* ---------- TABS ---------- */
-const TABS=[["dashboard","Dashboard"],["ask","Community"],["enf","Enforcement"],["rules","Rule lookup"],["packet","Requirements packet"],["adi","Determinations"],["fac","My account"]];
+const TABS=[["dashboard","Dashboard"],["ask","Community"],["enf","Enforcement"],["rules","Rule lookup"],["packet","Requirements packet"],["adi","ADI Index"],["fac","My account"]];
 $("#tabs").innerHTML=TABS.map((t,i)=>`<button class="tab" role="tab" data-p="${t[0]}" aria-selected="${i===0}">${t[1]}</button>`).join("");
 $$(".tab").forEach(b=>b.onclick=()=>{$$(".tab").forEach(x=>x.setAttribute("aria-selected","false"));b.setAttribute("aria-selected","true");$$(".panel").forEach(p=>p.classList.remove("active"));$("#p-"+b.dataset.p).classList.add("active");window.scrollTo({top:0,behavior:"smooth"});});
 
@@ -725,11 +732,19 @@ async function doRuleLookup(p){
   b.disabled=false;b.textContent="Search";renderRSugg();
 }
 async function summarizeCfr(cite,text){
-  var sa=$("#rSummA");if(!sa)return;sa.classList.add("show");sa.innerHTML='<span class="note"><span class="spin"></span> Summarizing in plain English…</span>';
+  var sa=$("#rSummA");if(!sa)return;sa.classList.add("show");
+  var st=approvalState();
+  if(st==="out"){sa.innerHTML='<div class="note">Plain-English summaries are a member feature — <button class="linkbtn" id="sumSignin">sign in or create an account (free during the beta)</button> to use them.</div>';var sb2=$("#sumSignin");if(sb2)sb2.onclick=function(){openAuth("signin");};return;}
+  if(st==="pending"){sa.innerHTML='<div class="note">⏳ Summaries unlock once the AIM team approves your account — you\'ll have access shortly.</div>';return;}
+  sa.innerHTML='<span class="note"><span class="spin"></span> Summarizing in plain English…</span>';
   try{
-    var r=await fetch(FN+"ask-hub",{method:"POST",headers:HDRS,body:JSON.stringify({question:"In plain English for a compliance manager, summarize "+cite+" — what it requires and who it applies to. Rule text follows:\n\n"+(text||"").slice(0,4000)})});
+    var tok=null;try{tok=(await sbc.auth.getSession()).data.session.access_token;}catch(e){}
+    var r=await fetch(FN+"ask-hub",{method:"POST",headers:{apikey:KEY,Authorization:"Bearer "+(tok||KEY),"Content-Type":"application/json"},body:JSON.stringify({question:"In plain English for a compliance manager, summarize "+cite+" — what it requires and who it applies to. Rule text follows:\n\n"+(text||"").slice(0,4000)})});
     var d=await r.json();
-    sa.innerHTML=d.answer?'<h4>Plain-English summary</h4><div>'+mdLite(d.answer)+'</div><div class="note">Summary generated from the eCFR text — orientation only; the rule text above is authoritative.</div>':'<div class="note">Couldn’t summarize right now.</div>';
+    if(d.error==="limit_user"){sa.innerHTML='<div class="note">You\'ve hit today\'s summary limit (10/day during the beta). It resets at midnight UTC.</div>';}
+    else if(d.error==="limit_global"){sa.innerHTML='<div class="note">The Hub\'s shared daily AI allowance is used up — it resets at midnight UTC. The rule text above is still the authoritative source.</div>';}
+    else if(d.error==="signin_required"||d.error==="approval_required"){sa.innerHTML='<div class="note">Summaries unlock once your account is approved.</div>';}
+    else sa.innerHTML=d.answer?'<h4>Plain-English summary</h4><div>'+mdLite(d.answer)+'</div><div class="note">Summary generated from the eCFR text — orientation only; the rule text above is authoritative.</div>':'<div class="note">Couldn’t summarize right now.</div>';
   }catch(e){sa.innerHTML='<div class="note">Couldn’t summarize right now.</div>';}
 }
 $("#rBtn").onclick=function(){var v=$("#rQ").value.trim();if(!v){$("#rQ").focus();return;}
@@ -1305,10 +1320,41 @@ async function loadAdmin(){
     var profs=(await sbc.from("profiles").select("id,email,display_name,company,sme_note,photo_pending,photo_status,company_logo_pending,logo_status,sme_status").or("photo_status.eq.pending,sme_status.eq.pending,logo_status.eq.pending")).data||[];
     var tickets=(await sbc.from("feedback").select("*").order("created_at",{ascending:false})).data||[];
     var tnotes=(await sbc.from("feedback_notes").select("*").order("created_at")).data||[];
+    var accts=(await sbc.from("profiles").select("id,email,display_name,company,approved,created_at").order("created_at",{ascending:false})).data||[];
+    var pv=(await sbc.from("page_views").select("ts,vid,sid,path,event,email,ua,referrer,screen").order("ts",{ascending:false}).limit(500)).data||[];
     window.__profs=profs;window.__tickets=tickets;window.__tnotes=tnotes;
-    host.innerHTML=adminPostsHTML(posts)+adminApprovalsHTML(profs)+adminTicketsHTML();
+    host.innerHTML=adminAccountsHTML(accts)+adminPostsHTML(posts)+adminApprovalsHTML(profs)+adminTrafficHTML(pv)+adminTicketsHTML();
     wireAdmin();wireTickets();
   }catch(e){host.innerHTML='<div class="note">Couldn\'t load admin data: '+esc(String(e.message||e))+'</div>';}
+}
+function adminAccountsHTML(accts){
+  var pend=accts.filter(function(a){return !a.approved;}).length;
+  var rows=accts.map(function(a){
+    var who=esc(a.display_name||a.email||a.id)+(a.display_name&&a.email?' · '+esc(a.email):"")+(a.company?' · '+esc(a.company):"");
+    var when=a.created_at?new Date(a.created_at).toLocaleDateString():"";
+    var act=a.approved
+      ?'<span class="tag">approved</span> <button class="btn ghost" data-act="revoke_acct" data-id="'+a.id+'">Revoke</button>'
+      :'<span class="tag">PENDING</span> <button class="btn ok" data-act="approve_acct" data-id="'+a.id+'">Approve</button>';
+    return '<div class="aprow"><span>'+who+' <span class="note">'+when+'</span></span><span class="aact">'+act+'</span></div>';
+  }).join("");
+  return '<div class="asec"><h3>Member accounts <span class="cnt">'+pend+' pending / '+accts.length+'</span></h3><div class="acard">'+(rows||'<p class="note">No accounts yet.</p>')+'</div></div>';
+}
+function adminTrafficHTML(pv){
+  var uniq={},days={},known={};
+  pv.forEach(function(v){
+    if(v.vid){uniq[v.vid]=uniq[v.vid]||[];uniq[v.vid].push(v);if(v.email&&!known[v.vid])known[v.vid]=v.email;}
+    if(v.event==="view"){var d=(v.ts||"").slice(0,10);days[d]=(days[d]||0)+1;}
+  });
+  var dayChips=Object.keys(days).sort().slice(-14).map(function(d){return '<span class="chip" style="cursor:default">'+esc(d.slice(5))+' · '+days[d]+'</span>';}).join(" ");
+  var vidRows=Object.keys(uniq).map(function(vid){
+    var vs=uniq[vid];var last=vs[0];
+    var views=vs.filter(function(x){return x.event==="view";}).length;
+    var sessions={};vs.forEach(function(x){if(x.sid)sessions[x.sid]=1;});
+    return '<div class="aprow"><span><b>'+esc(known[vid]||"Anonymous visitor")+'</b> <span class="note">'+esc(String(vid).slice(0,8))+'… · '+views+' visit(s) over '+Object.keys(sessions).length+' session(s) · last seen '+new Date(last.ts).toLocaleString()+'</span><div class="note">'+esc((last.ua||"").slice(0,90))+(last.referrer?' · from '+esc(last.referrer.slice(0,60)):"")+(last.screen?' · '+esc(last.screen):"")+'</div></span></div>';
+  }).join("");
+  return '<div class="asec"><h3>Site traffic <span class="cnt">'+Object.keys(uniq).length+' device(s) · '+pv.length+' recent events</span></h3>'+
+    '<div class="tfilters"><div class="tfrow">'+(dayChips||'<span class="note">Tracking starts now — visits will appear here from today forward.</span>')+'</div></div>'+
+    '<div class="acard">'+(vidRows||'<p class="note">No visits recorded yet (tracking began with this deploy).</p>')+'</div></div>';
 }
 function adminPostsHTML(posts){
   var rows=posts.map(function(p){
@@ -1406,6 +1452,8 @@ async function adminAction(act,id,btn){
     else if(act==="reject_logo"){await sbc.from("profiles").update({logo_status:"rejected",company_logo_pending:null}).eq("id",id);}
     else if(act==="approve_sme"){await sbc.from("profiles").update({is_sme:true,sme_status:"approved"}).eq("id",id);}
     else if(act==="reject_sme"){await sbc.from("profiles").update({sme_status:"rejected"}).eq("id",id);}
+    else if(act==="approve_acct"){await sbc.from("profiles").update({approved:true}).eq("id",id);}
+    else if(act==="revoke_acct"){await sbc.from("profiles").update({approved:false}).eq("id",id);}
     else if(act==="addnote"){var inp=btn.closest(".acard").querySelector(".tninput");var v=(inp&&inp.value.trim())||"";if(!v)return;await sbc.from("feedback_notes").insert({feedback_id:id,note:v,author_email:(window.__USER&&window.__USER.email)||null});if(inp)inp.value="";await refreshTickets();return;}
     else if(act==="reply"){await sendAdminReply(id,btn);return;}
     loadAdmin();
@@ -1472,17 +1520,24 @@ async function sendFeedback(){
 const ADI_CATS=["NSPS","MACT","NESHAP","GACT","Asbestos","Woodstoves","CFC","Federal Plan"];
 const ADI_PARTS={"60":"40 CFR Part 60 — NSPS","61":"40 CFR Part 61 — NESHAP","62":"40 CFR Part 62 — Federal Plans","63":"40 CFR Part 63 — MACT / GACT"};
 function adiPdf(c){return "https://cfpub.epa.gov/adi/index.cfm?fuseaction=home.dsp_show_file_contents&id="+encodeURIComponent(c);}
-function renderAdiGate(){
-  var g=$("#adiGate"),t=$("#adiTool");if(!g||!t)return;
-  if(window.__USER){
-    g.innerHTML="";t.style.display="";
-    if(!window.__adiBooted){window.__adiBooted=true;loadAdiSubparts();adiSearch();}
-  }else{
-    t.style.display="none";
-    g.innerHTML='<div class="fbanner">The searchable ADI is a signed-in feature — <button class="linkbtn" id="adiSignin" style="margin-left:6px">sign in or create an account (free during the beta)</button> to use it.</div>';
-    var s=$("#adiSignin");if(s)s.onclick=function(){openAuth("signin");};
-  }
+function approvalState(){
+  if(!window.__USER)return "out";
+  if(isAdminUser())return "ok";
+  return (window.__profile&&window.__profile.approved)?"ok":"pending";
 }
+function renderGate(gateId,toolId,label,onOk){
+  var g=$("#"+gateId),t=$("#"+toolId);if(!g||!t)return;
+  var st=approvalState();
+  if(st==="ok"){g.innerHTML="";t.style.display="";if(onOk)onOk();}
+  else if(st==="pending"){t.style.display="none";g.innerHTML='<div class="fbanner">⏳ Thanks for signing up! New accounts are approved by the AIM team before the member tools unlock — you\'ll have access shortly.</div>';}
+  else{t.style.display="none";g.innerHTML='<div class="fbanner">'+label+' is a member feature — <button class="linkbtn gateSignin" style="margin-left:6px">sign in or create an account (free during the beta)</button>.</div>';var s=g.querySelector(".gateSignin");if(s)s.onclick=function(){openAuth("signin");};}
+}
+function renderAllGates(){
+  renderGate("adiGate","adiTool","The searchable ADI Index",function(){if(!window.__adiBooted){window.__adiBooted=true;loadAdiSubparts();adiSearch();}});
+  renderGate("enfGate","enfTool","Enforcement watch");
+  renderGate("pktGate","pktTool","The requirements packet builder");
+}
+function renderAdiGate(){renderAllGates();}
 async function loadAdiSubparts(){
   if(!sbc)return;
   $("#adiCat").innerHTML='<option value="">All categories</option>'+ADI_CATS.map(function(c){return '<option>'+c+'</option>';}).join("");
@@ -1531,23 +1586,62 @@ async function adiSearch(){
   }catch(e){a.innerHTML='<div class="note">Search failed — try again in a moment.</div>';}
   b.disabled=false;b.textContent="Search";
 }
+async function adiPacket(){
+  if(approvalState()!=="ok")return;
+  var sub=$("#adiSub").value;
+  if(!sub){toast("Pick a subpart first, then build the packet");return;}
+  var b=$("#adiPkt");b.disabled=true;b.innerHTML='<span class="spin"></span> Building…';
+  try{
+    var res=await sbc.from("adi_determinations").select("*").contains("subparts",[sub]).order("letter_date",{ascending:false,nullsFirst:false});
+    if(res.error)throw res.error;
+    var rows=res.data||[];
+    var s=(window.__adiSubMap||{})[sub]||{};
+    var pretty="40 CFR Part "+(s.part||sub.split("-")[0])+", Subpart "+(s.subpart||sub.split("-")[1])+(s.description?" — "+s.description:"");
+    var today=new Date().toLocaleDateString(undefined,{year:"numeric",month:"long",day:"numeric"});
+    var html='<!DOCTYPE html><html><head><meta charset="utf-8"><title>ADI Determinations Packet — '+esc(pretty)+'</title><style>body{font:14px/1.55 Georgia,serif;color:#1a1a1a;max-width:820px;margin:40px auto;padding:0 24px}h1{font-size:22px;margin:0 0 2px}h2{font-size:15px;margin:26px 0 4px;border-bottom:1px solid #999;padding-bottom:3px}.meta{color:#555;font-size:12.5px;margin:0 0 4px}.abs{white-space:pre-wrap;margin:6px 0 2px}.hd{color:#555;font-size:13px;margin-bottom:24px}a{color:#1a4d8f;word-break:break-all}.note{font-size:12px;color:#666;margin-top:30px;border-top:1px solid #ccc;padding-top:10px}.pbtn{font:13px system-ui;padding:8px 14px;margin-bottom:18px;cursor:pointer}@media print{a{color:#1a1a1a;text-decoration:none}.pbtn{display:none}}</style></head><body>';
+    html+='<button class="pbtn" onclick="print()">🖨 Print / save as PDF</button>';
+    html+='<h1>EPA Applicability Determinations — '+esc(pretty)+'</h1><div class="hd">'+rows.length+' determination'+(rows.length===1?"":"s")+' from EPA\'s Applicability Determination Index · compiled '+today+' by the AIM EH&amp;S Hub (hub.aim-env.com)</div>';
+    rows.forEach(function(r,i){
+      var d=r.letter_date?new Date(r.letter_date+"T00:00:00").toLocaleDateString(undefined,{year:"numeric",month:"short",day:"numeric"}):"undated";
+      html+='<h2>'+(i+1)+'. '+esc(r.title||r.control_number)+'</h2><div class="meta">'+esc(r.control_number)+' · '+d+(r.office?' · '+esc(r.office):"")+(r.author?' · '+esc(r.author):"")+((r.categories||[]).length?' · '+esc(r.categories.join(", ")):"")+'</div>'+(r.abstract?'<div class="abs">'+esc(r.abstract)+'</div>':'<div class="meta">(No EPA abstract on file — see the letter.)</div>')+'<div class="meta">EPA letter: <a href="'+adiPdf(r.control_number)+'">'+adiPdf(r.control_number)+'</a></div>';
+    });
+    html+='<div class="note">Source: EPA Applicability Determination Index (cfpub.epa.gov/adi). Abstracts are EPA\'s own summaries; the linked letters are authoritative. Compiled for reference by AIM Environmental Health &amp; Safety — not legal advice.</div></body></html>';
+    var w=window.open("","_blank");
+    if(!w){toast("Allow pop-ups to open the packet");}
+    else{w.document.write(html);w.document.close();}
+  }catch(e){toast("Couldn't build the packet — try again");}
+  b.disabled=false;b.textContent="📋 Subpart packet";
+}
 (function(){
   var b=$("#adiBtn"),q=$("#adiQ");
   if(b)b.onclick=adiSearch;
   if(q)q.addEventListener("keydown",function(e){if(e.key==="Enter")adiSearch();});
   var s=$("#adiSub"),c=$("#adiCat");
   if(s)s.onchange=adiSearch;if(c)c.onchange=adiSearch;
+  var p=$("#adiPkt");if(p)p.onclick=adiPacket;
 })();
+
+/* ---------- PAGE-VIEW BEACON (first-party; counts anonymous visitors too) ---------- */
+function pvSend(ev){
+  try{
+    var vid=localStorage.getItem("hubVid");if(!vid){vid=(crypto.randomUUID?crypto.randomUUID():String(Math.random()).slice(2)+Date.now());localStorage.setItem("hubVid",vid);}
+    var sid=sessionStorage.getItem("hubSid");if(!sid){sid=(crypto.randomUUID?crypto.randomUUID():String(Math.random()).slice(2)+Date.now());sessionStorage.setItem("hubSid",sid);}
+    fetch(SB+"/rest/v1/page_views",{method:"POST",headers:HDRS,body:JSON.stringify({vid:vid,sid:sid,event:ev||"view",path:location.pathname,referrer:(document.referrer||"").slice(0,300)||null,ua:navigator.userAgent.slice(0,300),screen:(screen.width||0)+"x"+(screen.height||0),user_id:window.__USER?window.__USER.id:null,email:window.__USER?window.__USER.email:null})});
+  }catch(e){}
+}
 
 /* --- onAuth override: also load profile, community, admin --- */
 async function onAuth(session){
   window.__USER=session?session.user:null;
   renderAcct();renderFeedbackBody();
   if(window.__USER){await loadProfileFromAccount();await refreshProfile();}
-  renderFacBanner();renderFeed();renderProfileSection();buildAdminTab();loadCommunity();renderAdiGate();
+  renderFacBanner();renderFeed();renderProfileSection();buildAdminTab();loadCommunity();renderAllGates();
+  if(!window.__pvSent){window.__pvSent=true;pvSend("view");}
+  else if(window.__USER&&!window.__pvAuthSent){window.__pvAuthSent=true;pvSend("signin");}
 }
 (function(){var bg=$("#profBg");if(bg){bg.onclick=function(e){if(e.target===bg)bg.classList.remove("open");};var x=$("#profClose");if(x)x.onclick=function(){bg.classList.remove("open");};}})();
-loadCommunity();renderProfileSection();renderAdiGate();
+loadCommunity();renderProfileSection();renderAllGates();
+if(!sbc&&!window.__pvSent){window.__pvSent=true;pvSend("view");}
 
 </script>
 </body>
