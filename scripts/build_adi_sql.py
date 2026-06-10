@@ -82,6 +82,9 @@ def main():
             'subparts': sorted(set(ctrl_subs.get(ctrl, []))),
         })
 
+    # deterministic order so refresh runs only commit on real content changes
+    recs.sort(key=lambda r: r['control_number'])
+
     # data artifact for the public repo (public EPA data) — includes the subpart
     # lookup so the adi-load edge function can rebuild both tables from this file
     label_map = {}
