@@ -1,0 +1,50 @@
+name: Monthly ADI data refresh
+# Re-scrapes EPA's Applicability Determination Index (politely, ~35 min),
+# commits data/adi.json.gz if the content changed, and tells the Supabase
+# loader to re-ingest. No secrets required: public EPA data, and the loader
+# only reads from this repo. EPA last added determinations in 2020, so most
+# months this is a no-op — but if they resume, the Hub picks it up automatically.
+on:
+  schedule:
+    - cron: "0 8 3 * *"   # 3rd of each month, 08:00 UTC
+  workflow_dispatch: {}
+permissions:
+  contents: write
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Scrape ADI
+        run: python3 scripts/scrape_adi.py --out /tmp/adi_scrape
+      - name: Build artifact
+        run: python3 scripts/build_adi_sql.py --scrape /tmp/adi_scrape --sqlout /tmp/adi_sql
+      - name: Commit refreshed data (if content changed)
+        id: commit
+        run: |
+          # gzip bytes always differ (embedded mtime); compare decompressed
+          # content with the scrape date stripped.
+          if python3 - <<'EOF'
+          import gzip, json, subprocess, sys
+          new = json.load(gzip.open('data/adi.json.gz', 'rt')); new.pop('scraped', None)
+          raw = subprocess.run(['git', 'show', 'HEAD:data/adi.json.gz'], capture_output=True).stdout
+          old = json.loads(gzip.decompress(raw)) if raw else {}
+          old.pop('scraped', None)
+          sys.exit(1 if new != old else 0)  # exit 1 = changed
+          EOF
+          then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No content changes — skipping commit."
+          else
+            git config user.name "adi-refresh-bot"
+            git config user.email "actions@users.noreply.github.com"
+            git add data/adi.json.gz
+            git commit -m "Monthly ADI refresh ($(date -u +%F))"
+            git push
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Reload Supabase ADI tables
+        if: steps.commit.outputs.changed == 'true'
+        run: |
+          sleep 360   # let the raw.githubusercontent.com cache (~5 min TTL) expire
+          curl -s -m 300 -X POST "https://xnaseutcmkgukphslpkv.supabase.co/functions/v1/adi-load?force=1"
