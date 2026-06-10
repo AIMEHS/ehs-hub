@@ -3,19 +3,19 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>EHS Compliance Hub — Free EHS Tools by AIM EH&S</title>
-<meta name="description" content="Free EHS compliance tools for the people who file the report: Federal Register rule watch, reporting-deadline calendar, EPA enforcement lookup, eCFR rule-text search, and cited requirements packets. Built by AIM Environmental Health & Safety (aim-env.com).">
+<title>EHS Compliance Hub — EHS Tools by AIM EH&S | Open Beta</title>
+<meta name="description" content="EHS compliance tools in open beta: Federal Register rule watch, reporting-deadline calendar, EPA enforcement lookup, eCFR rule-text search, and cited requirements packets. Built by AIM Environmental Health & Safety (aim-env.com).">
 <link rel="canonical" href="https://hub.aim-env.com/">
 <meta name="robots" content="index,follow">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="AIM EHS Hub">
-<meta property="og:title" content="EHS Compliance Hub — Free EHS Tools by AIM EH&S">
-<meta property="og:description" content="Federal Register watch, reporting-deadline calendar, EPA enforcement lookup, eCFR rule text, and cited requirements packets — free EHS tools from AIM EH&S.">
+<meta property="og:title" content="EHS Compliance Hub — EHS Tools by AIM EH&S | Open Beta">
+<meta property="og:description" content="Federal Register watch, reporting-deadline calendar, EPA enforcement lookup, eCFR rule text, and cited requirements packets — now in open beta from AIM EH&S.">
 <meta property="og:url" content="https://hub.aim-env.com/">
 <meta name="twitter:card" content="summary">
 <script type="application/ld+json">
 {"@context":"https://schema.org","@graph":[
- {"@type":"WebApplication","@id":"https://hub.aim-env.com/#app","name":"EHS Compliance Hub","alternateName":"AIM EHS Hub","url":"https://hub.aim-env.com/","applicationCategory":"BusinessApplication","operatingSystem":"Web","isAccessibleForFree":true,"description":"Free EHS compliance tools: Federal Register rule watch, reporting-deadline calendar, EPA enforcement lookup, eCFR rule-text search, and paragraph-cited requirements packets.","publisher":{"@id":"https://aim-env.com/#org"}},
+ {"@type":"WebApplication","@id":"https://hub.aim-env.com/#app","name":"EHS Compliance Hub","alternateName":"AIM EHS Hub","url":"https://hub.aim-env.com/","applicationCategory":"BusinessApplication","operatingSystem":"Web","description":"EHS compliance tools (open beta): Federal Register rule watch, reporting-deadline calendar, EPA enforcement lookup, eCFR rule-text search, and paragraph-cited requirements packets.","publisher":{"@id":"https://aim-env.com/#org"}},
  {"@type":"Organization","@id":"https://aim-env.com/#org","name":"AIM Environmental Health & Safety","alternateName":"AIM EHS","url":"https://aim-env.com/","sameAs":["https://hub.aim-env.com/"]}
 ]}
 </script>
@@ -301,6 +301,8 @@ button.citelink:hover{background:rgba(14,165,233,.18);text-decoration:underline}
 [data-theme="busters"] .dot{background:#FF6C00;box-shadow:0 0 10px rgba(255,108,0,.8)}
 [data-theme="busters"] h1,[data-theme="busters"] h2{letter-spacing:.01em}
 .bustlogo{height:34px;width:auto;margin-right:8px;flex:none;display:inline-block;vertical-align:middle;filter:drop-shadow(0 0 6px rgba(255,108,0,.35))}
+.beta{margin-left:8px;font-size:9.5px;font-weight:800;letter-spacing:.09em;color:var(--brand);border:1px solid var(--brand);border-radius:999px;padding:2px 7px;vertical-align:middle;white-space:nowrap}
+@media(max-width:560px){.beta{display:none}}
 #leakGame{position:fixed;inset:0;z-index:400;background:rgba(5,5,8,.96);cursor:crosshair;user-select:none;-webkit-user-select:none;touch-action:none}
 #leakGame .lgHud{position:absolute;top:14px;left:50%;transform:translateX(-50%);display:flex;gap:18px;align-items:center;font-weight:800;font-size:14px;color:#fff;background:rgba(0,0,0,.5);padding:8px 16px;border-radius:999px;white-space:nowrap}
 #leakGame .lgPpm{color:#7CFC9B;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;min-width:128px;text-align:right}
@@ -339,7 +341,7 @@ button.citelink:hover{background:rgba(14,165,233,.18);text-decoration:underline}
 <body>
 <header class="top">
   <div class="wrap topbar">
-    <div class="brand"><span class="dot"></span><b>AIM™&nbsp;EH&amp;S</b>&nbsp;Hub</div>
+    <div class="brand"><span class="dot"></span><b>AIM™&nbsp;EH&amp;S</b>&nbsp;Hub<span class="beta">OPEN BETA</span></div>
     <div class="spacer" style="flex:1"></div>
     <div class="themebtn">
       <button id="themeToggle">◑ <span id="themeName">Light</span> ▾</button>
@@ -357,7 +359,7 @@ button.citelink:hover{background:rgba(14,165,233,.18);text-decoration:underline}
     <div class="hero">
       <h1>EHS Compliance Command Center</h1>
       <p>What changed, what's due, and what to do about it — for the people who actually file the report. Federal Register rule changes in plain English, a live reporting-deadline calendar, and tools to check enforcement, look up rule text, and ask compliance questions. Updated daily.</p>
-      <p class="backlink" style="margin-top:8px">Free EHS tools from <a href="https://aim-env.com/">AIM Environmental Health &amp; Safety — LDAR, mold &amp; compliance services at aim-env.com ↗</a></p>
+      <p class="backlink" style="margin-top:8px">In open beta, free to use while we build — from <a href="https://aim-env.com/">AIM Environmental Health &amp; Safety — LDAR, mold &amp; compliance services at aim-env.com ↗</a></p>
     </div>
     <div id="facBanner"></div>
 
@@ -897,7 +899,7 @@ function applyBusters(on){
   var bls=$$(".backlink");
   if(on){
     if(!BRAND_ORIG)BRAND_ORIG={brand:brand.innerHTML,foot:foot.innerHTML,title:document.title,bls:bls.map(function(b){return b.innerHTML;})};
-    brand.innerHTML='<span class="dot"></span>'+BUST_IMG+'<b>LDAR&nbsp;BUSTERS</b>&nbsp;Hub';
+    brand.innerHTML='<span class="dot"></span>'+BUST_IMG+'<b>LDAR&nbsp;BUSTERS</b>&nbsp;Hub<span class="beta">OPEN BETA</span>';
     document.title="EHS Compliance Hub — LDAR Busters";
     foot.innerHTML='© '+(new Date().getFullYear())+' LDAR Busters™ — the original leak-detection crew · <a href="https://aim-env.com" target="_blank" rel="noopener">aim-env.com</a>';
     bls.forEach(function(b){b.innerHTML='Brought to you by <a href="https://aim-env.com/">LDAR Busters — busting fugitive emissions since day one · aim-env.com ↗</a>';});
@@ -997,7 +999,7 @@ const sbc = window.supabase ? window.supabase.createClient(SB, KEY, {auth:{persi
 function activeSection(){const t=document.querySelector('.tab[aria-selected="true"]');return t?t.dataset.p:"dashboard";}
 const authBg=$("#authBg");let authMode="signin";
 function paintAuth(){
-  const T={signin:["Sign in","Sign in to leave feedback and save your facility settings.","Sign in"],signup:["Create your account","Free — unlocks feedback and saves your rules across devices.","Create account"],forgot:["Reset password","We'll email you a link to set a new password.","Send reset link"]}[authMode];
+  const T={signin:["Sign in","Sign in to leave feedback and save your facility settings.","Sign in"],signup:["Create your account","Free during the open beta — unlocks feedback and saves your rules across devices.","Create account"],forgot:["Reset password","We'll email you a link to set a new password.","Send reset link"]}[authMode];
   $("#authTitle").textContent=T[0];$("#authSub").textContent=T[1];$("#authSubmit").textContent=T[2];
   $("#pwField").style.display=authMode==="forgot"?"none":"flex";
   $("#toSignup").textContent=authMode==="signup"?"Have an account? Sign in":"Create an account";
@@ -1146,7 +1148,7 @@ function renderCommGate(){
     g.innerHTML='<button class="btn" id="askOpen">+ Ask the community</button><div id="askForm"></div>';
     $("#askOpen").onclick=toggleAskForm;
   }else{
-    g.innerHTML='<div class="fbanner">Join the conversation — <button class="linkbtn" id="commSignin" style="margin-left:6px">sign in or create a free account</button> to ask questions and answer others.</div>';
+    g.innerHTML='<div class="fbanner">Join the conversation — <button class="linkbtn" id="commSignin" style="margin-left:6px">sign in or create an account (free during the beta)</button> to ask questions and answer others.</div>';
     $("#commSignin").onclick=function(){openAuth("signin");};
   }
 }
