@@ -1031,6 +1031,7 @@ if(document.documentElement.dataset.theme==="busters")applyBusters(true);
 window.__custom=window.__custom||{pinned:new Set(),hidden:new Set(),ack:new Set()};
 const sbc = window.supabase ? window.supabase.createClient(SB, KEY, {auth:{persistSession:true,autoRefreshToken:true,lock:async function(n,t,fn){return await fn();}}}) : null;
 function activeSection(){const t=document.querySelector('.tab[aria-selected="true"]');return t?t.dataset.p:"dashboard";}
+const FREEMAIL=["gmail.com","googlemail.com","yahoo.com","yahoo.co.uk","ymail.com","hotmail.com","hotmail.co.uk","outlook.com","live.com","msn.com","aol.com","icloud.com","me.com","mac.com","proton.me","protonmail.com","pm.me","gmx.com","gmx.net","mail.com","yandex.com","yandex.ru","mail.ru","fastmail.com","hey.com","duck.com","tutanota.com","tuta.io","zohomail.com","mailinator.com","guerrillamail.com","sharklasers.com","yopmail.com","temp-mail.org","10minutemail.com","dispostable.com","getnada.com","trashmail.com","tempmail.dev","mytemp.email"];
 const authBg=$("#authBg");let authMode="signin";
 function paintAuth(){
   const T={signin:["Sign in","Sign in to leave feedback and save your facility settings.","Sign in"],signup:["Create your account","Free during the open beta — unlocks feedback and saves your rules across devices.","Create account"],forgot:["Reset password","We'll email you a link to set a new password.","Send reset link"]}[authMode];
@@ -1060,8 +1061,12 @@ async function doAuth(){
       res=await Promise.race([sbc.auth.resetPasswordForEmail(email,{redirectTo:location.origin}),TO(15000)]);
       if(res.error)authMsg(res.error.message);else authMsg("Check your email for a reset link.",true);
     }else if(authMode==="signup"){
+      if(FREEMAIL.indexOf(email.toLowerCase().split("@")[1]||"")>=0){
+        authMsg("During the open beta, please sign up with your work or school email. Only have a personal address? Email solutions@aim-env.com and we'll set you up.");
+        b.disabled=false;b.textContent=old;return;
+      }
       res=await Promise.race([sbc.auth.signUp({email:email,password:pw}),TO(15000)]);
-      if(res.error)authMsg(res.error.message);
+      if(res.error)authMsg(/work_email_required|database error/i.test(res.error.message)?"During the open beta, please sign up with your work or school email. Only have a personal address? Email solutions@aim-env.com and we'll set you up.":res.error.message);
       else if(res.data&&res.data.session){authMsg("Welcome — you're in.",true);onAuth(res.data.session);setTimeout(closeAuth,500);}
       else authMsg("Account created — check your email to confirm, then sign in.",true);
     }else{
