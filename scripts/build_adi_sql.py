@@ -45,7 +45,9 @@ def main():
 
     def iso_date(us):
         m = re.match(r'(\d{2})/(\d{2})/(\d{4})$', us or '')
-        return f'{m.group(3)}-{m.group(1)}-{m.group(2)}' if m else None
+        if not m or m.group(3) < '1950':   # EPA stores undated letters as 12/30/1899
+            return None
+        return f'{m.group(3)}-{m.group(1)}-{m.group(2)}'
 
     recs = []
     seen = set()
