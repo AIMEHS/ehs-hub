@@ -300,7 +300,7 @@ button.citelink:hover{background:rgba(14,165,233,.18);text-decoration:underline}
 [data-theme="busters"]{--bg:#0a0a0a;--panel:#161616;--panel2:#1d1d1d;--ink:#f7f4f1;--muted:#b8b0a8;--line:#2b2b2b;--brand:#FF6C00;--brand-ink:#000000;--accent:#FF6C00;--good:#27c07d;--warn:#ffb020;--bad:#ff5544;--chip:#232323;--chip-ink:#f0e6dc;--shadow:0 1px 2px rgba(0,0,0,.5),0 10px 30px rgba(255,108,0,.08);--glow:0 0 18px rgba(255,108,0,.35)}
 [data-theme="busters"] .dot{background:#FF6C00;box-shadow:0 0 10px rgba(255,108,0,.8)}
 [data-theme="busters"] h1,[data-theme="busters"] h2{letter-spacing:.01em}
-.bustlogo{height:32px;width:32px;margin-right:7px;flex:none;display:inline-block;vertical-align:middle}
+.bustlogo{height:34px;width:auto;margin-right:8px;flex:none;display:inline-block;vertical-align:middle;filter:drop-shadow(0 0 6px rgba(255,108,0,.35))}
 #leakGame{position:fixed;inset:0;z-index:400;background:rgba(5,5,8,.96);cursor:crosshair;user-select:none;-webkit-user-select:none;touch-action:none}
 #leakGame .lgHud{position:absolute;top:14px;left:50%;transform:translateX(-50%);display:flex;gap:18px;align-items:center;font-weight:800;font-size:14px;color:#fff;background:rgba(0,0,0,.5);padding:8px 16px;border-radius:999px;white-space:nowrap}
 #leakGame .lgPpm{color:#7CFC9B;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;min-width:128px;text-align:right}
@@ -890,21 +890,23 @@ document.addEventListener("click",function(e){
 /* ---------- EASTER EGGS (#9) ---------- */
 /* LDAR Busters brand takeover (active only while the secret theme is on) */
 var BRAND_ORIG=null;
-var BUST_SVG='<svg class="bustlogo" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="39" fill="none" stroke="#FF6C00" stroke-width="7"/><text x="50" y="47" text-anchor="middle" font-family="\'Arial Black\',Arial,sans-serif" font-weight="900" font-size="20" fill="#fff">LDAR</text><text x="50" y="69" text-anchor="middle" font-family="\'Arial Black\',Arial,sans-serif" font-weight="900" font-size="17" fill="#fff">BUSTERS</text></svg>';
+var BUST_IMG='<img class="bustlogo" src="busters-logo.svg" alt="LDAR Busters mark">';
 function applyBusters(on){
   var brand=document.querySelector(".brand"),foot=document.querySelector("footer");
   if(!brand||!foot)return;
   var bls=$$(".backlink");
   if(on){
     if(!BRAND_ORIG)BRAND_ORIG={brand:brand.innerHTML,foot:foot.innerHTML,title:document.title,bls:bls.map(function(b){return b.innerHTML;})};
-    brand.innerHTML='<span class="dot"></span>'+BUST_SVG+'<b>LDAR&nbsp;BUSTERS</b>&nbsp;Hub';
+    brand.innerHTML='<span class="dot"></span>'+BUST_IMG+'<b>LDAR&nbsp;BUSTERS</b>&nbsp;Hub';
     document.title="EHS Compliance Hub — LDAR Busters";
     foot.innerHTML='© '+(new Date().getFullYear())+' LDAR Busters™ — the original leak-detection crew · <a href="https://aim-env.com" target="_blank" rel="noopener">aim-env.com</a>';
     bls.forEach(function(b){b.innerHTML='Brought to you by <a href="https://aim-env.com/">LDAR Busters — busting fugitive emissions since day one · aim-env.com ↗</a>';});
+    if(!document.getElementById("bustIco")){var ic=document.createElement("link");ic.id="bustIco";ic.rel="icon";ic.type="image/svg+xml";ic.href="busters-logo.svg";document.head.appendChild(ic);}
   }else if(BRAND_ORIG){
     brand.innerHTML=BRAND_ORIG.brand;document.title=BRAND_ORIG.title;foot.innerHTML=BRAND_ORIG.foot;
     bls.forEach(function(b,i){if(BRAND_ORIG.bls[i]!=null)b.innerHTML=BRAND_ORIG.bls[i];});
     var y=document.querySelector("footer #yr");if(y)y.textContent=new Date().getFullYear();
+    var ic=document.getElementById("bustIco");if(ic)ic.remove();
   }
 }
 /* typed-word triggers: "busters" theme + "leak" mini-game (ignored while typing in fields) */
