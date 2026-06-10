@@ -882,6 +882,7 @@ function parseRefCite(c){
 function openRef(cite){
   var P=$("#refPanel");P.classList.add("open");P.setAttribute("aria-hidden","false");
   $("#refTitle").textContent=cite;
+  $("#refEcfr").textContent="eCFR ↗";
   var body=$("#refBody");
   var pr=parseRefCite(cite);
   if(!pr){body.innerHTML='<div class="note">Couldn’t parse that reference — open it on <a href="https://www.ecfr.gov/" target="_blank" rel="noopener">eCFR.gov ↗</a>.</div>';return;}
@@ -1614,6 +1615,30 @@ async function adiPacket(){
   }catch(e){toast("Couldn't build the packet — try again");}
   b.disabled=false;b.textContent="📋 Subpart packet";
 }
+function openAdiSummary(d){
+  var det=d.determination,s=d.summary||{};
+  var P=$("#refPanel");P.classList.add("open");P.setAttribute("aria-hidden","false");
+  $("#refTitle").textContent="ADI "+det.control_number+" — summary packet";
+  var eb=$("#refEcfr");eb.href=adiPdf(det.control_number);eb.textContent="EPA letter ↗";
+  var date=det.letter_date?new Date(det.letter_date+"T00:00:00").toLocaleDateString(undefined,{year:"numeric",month:"short",day:"numeric"}):"undated";
+  var subs=(det.subparts||[]).map(adiSubChip).join(", ");
+  function sec(t,b){return b?'<h4 style="font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:16px 0 5px">'+t+'</h4>'+b:"";}
+  function list(arr){return (arr&&arr.length)?'<ul style="margin:2px 0 2px 18px;padding:0">'+arr.map(function(x){return '<li style="margin:3px 0">'+esc(x)+'</li>';}).join("")+'</ul>':"";}
+  var body=$("#refBody");
+  body.innerHTML='<div style="white-space:normal">'+
+    '<div style="font-weight:750;font-size:15.5px">'+esc(det.title||det.control_number)+'</div>'+
+    '<div class="note" style="margin:3px 0 0">'+esc(det.control_number)+' · '+date+(det.office?' · '+esc(det.office):"")+(det.author?' · '+esc(det.author):"")+((det.categories||[]).length?' · '+esc(det.categories.join(", ")):"")+(subs?' · '+esc(subs):"")+'</div>'+
+    (d.scanned?'<div class="fbanner" style="margin:10px 0 0">⚠️ EPA\'s copy of this letter is a scanned image with no machine-readable text, so this summary is based only on EPA\'s short index abstract. Read the letter itself before relying on it.</div>':"")+
+    sec("What was asked",s.question?'<p style="margin:0">'+esc(s.question)+'</p>':"")+
+    sec("EPA's determination",s.determination?'<p style="margin:0">'+esc(s.determination)+'</p>':"")+
+    sec("Conditions &amp; limits",list(s.conditions))+
+    sec("Citations referenced in the letter",list(s.citations))+
+    sec("Practical takeaway",s.takeaway?'<p style="margin:0">'+esc(s.takeaway)+'</p>':"")+
+    (det.abstract?sec("EPA's own index abstract (verbatim)",'<div class="note" style="white-space:pre-wrap;margin:0">'+esc(det.abstract)+'</div>'):"")+
+    '<div class="note" style="margin-top:18px;border-top:1px solid var(--line);padding-top:10px">Summary generated from <a href="'+adiPdf(det.control_number)+'" target="_blank" rel="noopener">EPA\'s original letter ↗</a> — the letter is the authoritative source; verify citations against the current CFR at eCFR.gov. Not legal advice. Use Print above for a PDF copy.</div>'+
+    '</div>';
+  body.scrollTop=0;
+}
 async function adiSummaryPacket(ctrl,btn){
   if(approvalState()!=="ok"){toast("Sign in (and get approved) to build summary packets");return;}
   var old=btn.innerHTML;btn.disabled=true;btn.innerHTML='<span class="spin"></span> Reading EPA\'s letter…';
@@ -1624,31 +1649,7 @@ async function adiSummaryPacket(ctrl,btn){
     if(d.error==="limit_user"){toast("You've hit today's AI limit (10/day during the beta)");}
     else if(d.error==="limit_global"){toast("The Hub's shared daily AI allowance is used up — resets midnight UTC");}
     else if(d.error){toast("Couldn't build the packet — try again");}
-    else{
-      var det=d.determination,s=d.summary||{};
-      var date=det.letter_date?new Date(det.letter_date+"T00:00:00").toLocaleDateString(undefined,{year:"numeric",month:"short",day:"numeric"}):"undated";
-      var subs=(det.subparts||[]).map(adiSubChip).join(", ");
-      var today=new Date().toLocaleDateString(undefined,{year:"numeric",month:"long",day:"numeric"});
-      function sec(title,body){return body?'<h2>'+title+'</h2>'+body:"";}
-      function list(arr){return (arr&&arr.length)?'<ul>'+arr.map(function(x){return '<li>'+esc(x)+'</li>';}).join("")+'</ul>':"";}
-      var html='<!DOCTYPE html><html><head><meta charset="utf-8"><title>ADI Summary Packet — '+esc(det.control_number)+'</title><style>body{font:14px/1.55 Georgia,serif;color:#1a1a1a;max-width:780px;margin:40px auto;padding:0 24px}h1{font-size:21px;margin:0 0 3px}h2{font-size:14px;text-transform:uppercase;letter-spacing:.05em;margin:22px 0 6px;border-bottom:1px solid #999;padding-bottom:3px}.meta{color:#555;font-size:12.5px;margin:0 0 2px}.hd{color:#555;font-size:13px;margin-bottom:8px}ul{margin:4px 0 4px 20px;padding:0}li{margin:3px 0}.abs{white-space:pre-wrap;font-size:13px;color:#333;background:#f5f4f0;padding:10px 12px;border-left:3px solid #999}a{color:#1a4d8f;word-break:break-all}.warn{background:#fdf3d7;border-left:3px solid #b8860b;padding:8px 12px;font-size:13px;margin:10px 0}.note{font-size:12px;color:#666;margin-top:28px;border-top:1px solid #ccc;padding-top:10px}.pbtn{font:13px system-ui;padding:8px 14px;margin-bottom:18px;cursor:pointer}@media print{a{color:#1a1a1a;text-decoration:none}.pbtn{display:none}}</style></head><body>'+
-        '<button class="pbtn" onclick="print()">🖨 Print / save as PDF</button>'+
-        '<h1>'+esc(det.title||det.control_number)+'</h1>'+
-        '<div class="hd">EPA Applicability Determination '+esc(det.control_number)+' · '+date+(det.office?' · '+esc(det.office):"")+(det.author?' · '+esc(det.author):"")+'</div>'+
-        '<div class="meta">'+((det.categories||[]).length?'Categories: '+esc(det.categories.join(", ")):"")+(subs?' · Subparts: '+esc(subs):"")+'</div>'+
-        (d.scanned?'<div class="warn">⚠️ EPA\'s copy of this letter is a scanned image with no machine-readable text, so this summary is based only on EPA\'s short index abstract. Read the letter itself before relying on it.</div>':"")+
-        sec("What was asked",s.question?'<p>'+esc(s.question)+'</p>':"")+
-        sec("EPA's determination",s.determination?'<p>'+esc(s.determination)+'</p>':"")+
-        sec("Conditions & limits",list(s.conditions))+
-        sec("Citations referenced in the letter",list(s.citations))+
-        sec("Practical takeaway",s.takeaway?'<p>'+esc(s.takeaway)+'</p>':"")+
-        (det.abstract?sec("EPA's own index abstract (verbatim)",'<div class="abs">'+esc(det.abstract)+'</div>'):"")+
-        sec("EPA's original letter",'<p><a href="'+adiPdf(det.control_number)+'">'+adiPdf(det.control_number)+'</a></p>')+
-        '<div class="note">Summary generated by the AIM EH&amp;S Hub (hub.aim-env.com) from EPA\'s letter, compiled '+today+'. The letter is the authoritative source — verify citations against the current CFR at eCFR.gov. Not legal advice.</div></body></html>';
-      var w=window.open("","_blank");
-      if(!w){toast("Allow pop-ups to open the packet");}
-      else{w.document.write(html);w.document.close();}
-    }
+    else{openAdiSummary(d);}
   }catch(e){toast("Couldn't build the packet — try again");}
   btn.disabled=false;btn.innerHTML=old;
 }
