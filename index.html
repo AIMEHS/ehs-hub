@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>EHS Compliance Hub — EHS Tools by AIM EH&S | Open Beta</title>
-<meta name="description" content="EHS compliance tools in open beta: Federal Register rule watch, reporting-deadline calendar, EPA enforcement lookup, eCFR rule-text search, and cited requirements packets. Built by AIM Environmental Health & Safety (aim-env.com).">
+<meta name="description" content="EHS compliance tools in open beta: Federal Register rule watch, reporting-deadline calendar, EPA enforcement lookup, eCFR rule-text search, searchable EPA applicability determinations (ADI), and cited requirements packets. Built by AIM Environmental Health & Safety (aim-env.com).">
 <link rel="canonical" href="https://hub.aim-env.com/">
 <meta name="robots" content="index,follow">
 <meta property="og:type" content="website">
@@ -15,7 +15,7 @@
 <meta name="twitter:card" content="summary">
 <script type="application/ld+json">
 {"@context":"https://schema.org","@graph":[
- {"@type":"WebApplication","@id":"https://hub.aim-env.com/#app","name":"EHS Compliance Hub","alternateName":"AIM EHS Hub","url":"https://hub.aim-env.com/","applicationCategory":"BusinessApplication","operatingSystem":"Web","description":"EHS compliance tools (open beta): Federal Register rule watch, reporting-deadline calendar, EPA enforcement lookup, eCFR rule-text search, and paragraph-cited requirements packets.","publisher":{"@id":"https://aim-env.com/#org"}},
+ {"@type":"WebApplication","@id":"https://hub.aim-env.com/#app","name":"EHS Compliance Hub","alternateName":"AIM EHS Hub","url":"https://hub.aim-env.com/","applicationCategory":"BusinessApplication","operatingSystem":"Web","description":"EHS compliance tools (open beta): Federal Register rule watch, reporting-deadline calendar, EPA enforcement lookup, eCFR rule-text search, searchable EPA applicability determinations (ADI), and paragraph-cited requirements packets.","publisher":{"@id":"https://aim-env.com/#org"}},
  {"@type":"Organization","@id":"https://aim-env.com/#org","name":"AIM Environmental Health & Safety","alternateName":"AIM EHS","url":"https://aim-env.com/","sameAs":["https://hub.aim-env.com/"]}
 ]}
 </script>
@@ -358,7 +358,7 @@ button.citelink:hover{background:rgba(14,165,233,.18);text-decoration:underline}
   <section class="panel active" id="p-dashboard">
     <div class="hero">
       <h1>EHS Compliance Command Center</h1>
-      <p>What changed, what's due, and what to do about it — for the people who actually file the report. Federal Register rule changes in plain English, a live reporting-deadline calendar, and tools to check enforcement, look up rule text, and ask compliance questions. Updated daily.</p>
+      <p>What changed, what's due, and what to do about it — for the people who actually file the report. Federal Register rule changes in plain English, a live reporting-deadline calendar, and tools to check enforcement, look up rule text, search EPA applicability determinations, and ask compliance questions. Updated daily.</p>
       <p class="backlink" style="margin-top:8px">In open beta, free to use while we build — from <a href="https://aim-env.com/">AIM Environmental Health &amp; Safety — LDAR, mold &amp; compliance services at aim-env.com ↗</a></p>
     </div>
     <div id="facBanner"></div>
@@ -423,6 +423,24 @@ button.citelink:hover{background:rgba(14,165,233,.18);text-decoration:underline}
     <div class="rsearch" style="margin-top:8px"><input type="text" id="pQ" placeholder="Or type:  title part subpart   (e.g. 40 63 H)" autocomplete="off"><button class="btn" id="pBtn">Generate</button></div>
     <div class="answer" id="pA"></div>
     <p class="backlink">Want this program run for you? <a href="https://aim-env.com/">AIM EH&S — LDAR &amp; compliance services at aim-env.com ↗</a></p>
+  </div>
+</section>
+
+  <!-- ADI — APPLICABILITY DETERMINATIONS -->
+  <section class="panel" id="p-adi">
+  <div class="card tool">
+    <h2>Applicability determinations (ADI)</h2>
+    <p class="lead">Search EPA's <b>Applicability Determination Index</b> — 3,600+ official EPA letters and memos answering real-world questions on applicability, monitoring, recordkeeping, and reporting under NSPS, NESHAP/MACT, asbestos, woodstoves, and CFC rules. EPA's own ADI site is notoriously hard to use; here you can search it like a search engine — by keyword, subpart, or category — and every result links to EPA's original letter.</p>
+    <div id="adiGate"></div>
+    <div id="adiTool" style="display:none">
+      <div class="rsearch"><input type="text" id="adiQ" placeholder="Keyword search — e.g. delay of repair, flare monitoring, landfill exceedance…" autocomplete="off"><button class="btn" id="adiBtn">Search</button></div>
+      <div class="row">
+        <div class="field" style="max-width:420px"><label>Subpart</label><select id="adiSub"><option value="">All subparts</option></select></div>
+        <div class="field" style="max-width:200px"><label>Category</label><select id="adiCat"><option value="">All categories</option></select></div>
+      </div>
+      <div class="answer" id="adiA"></div>
+    </div>
+    <p class="backlink">Not sure how a determination applies to your facility? <a href="https://aim-env.com/">AIM EH&S — LDAR, mold &amp; compliance services at aim-env.com ↗</a></p>
   </div>
 </section>
 
@@ -542,7 +560,7 @@ document.addEventListener("touchstart",e=>{const t=e.changedTouches[0];tx=t.scre
 document.addEventListener("touchend",e=>{const t=e.changedTouches[0];const dx=t.screenX-tx,dy=t.screenY-ty;if(Math.max(Math.abs(dx),Math.abs(dy))<28)return;let d=Math.abs(dx)>Math.abs(dy)?(dx>0?"R":"L"):(dy>0?"D":"U");if(d===SWIPE[spos]){spos++;if(spos===SWIPE.length){spos=0;unlockCyber();}}else{spos=(d===SWIPE[0])?1:0;}},{passive:true});
 
 /* ---------- TABS ---------- */
-const TABS=[["dashboard","Dashboard"],["ask","Community"],["enf","Enforcement"],["rules","Rule lookup"],["packet","Requirements packet"],["fac","My account"]];
+const TABS=[["dashboard","Dashboard"],["ask","Community"],["enf","Enforcement"],["rules","Rule lookup"],["packet","Requirements packet"],["adi","Determinations"],["fac","My account"]];
 $("#tabs").innerHTML=TABS.map((t,i)=>`<button class="tab" role="tab" data-p="${t[0]}" aria-selected="${i===0}">${t[1]}</button>`).join("");
 $$(".tab").forEach(b=>b.onclick=()=>{$$(".tab").forEach(x=>x.setAttribute("aria-selected","false"));b.setAttribute("aria-selected","true");$$(".panel").forEach(p=>p.classList.remove("active"));$("#p-"+b.dataset.p).classList.add("active");window.scrollTo({top:0,behavior:"smooth"});});
 
@@ -1450,15 +1468,86 @@ async function sendFeedback(){
   send.disabled=false;send.textContent="Send feedback";
 }
 
+/* ---------- ADI — APPLICABILITY DETERMINATIONS (signed-in feature) ---------- */
+const ADI_CATS=["NSPS","MACT","NESHAP","GACT","Asbestos","Woodstoves","CFC","Federal Plan"];
+const ADI_PARTS={"60":"40 CFR Part 60 — NSPS","61":"40 CFR Part 61 — NESHAP","62":"40 CFR Part 62 — Federal Plans","63":"40 CFR Part 63 — MACT / GACT"};
+function adiPdf(c){return "https://cfpub.epa.gov/adi/index.cfm?fuseaction=home.dsp_show_file_contents&id="+encodeURIComponent(c);}
+function renderAdiGate(){
+  var g=$("#adiGate"),t=$("#adiTool");if(!g||!t)return;
+  if(window.__USER){
+    g.innerHTML="";t.style.display="";
+    if(!window.__adiBooted){window.__adiBooted=true;loadAdiSubparts();adiSearch();}
+  }else{
+    t.style.display="none";
+    g.innerHTML='<div class="fbanner">The searchable ADI is a signed-in feature — <button class="linkbtn" id="adiSignin" style="margin-left:6px">sign in or create an account (free during the beta)</button> to use it.</div>';
+    var s=$("#adiSignin");if(s)s.onclick=function(){openAuth("signin");};
+  }
+}
+async function loadAdiSubparts(){
+  if(!sbc)return;
+  $("#adiCat").innerHTML='<option value="">All categories</option>'+ADI_CATS.map(function(c){return '<option>'+c+'</option>';}).join("");
+  try{
+    var res=await sbc.from("adi_subparts").select("*").gt("n_dets",0).order("part").order("subpart");
+    if(res.error)throw res.error;
+    var subs=res.data||[];window.__adiSubMap={};subs.forEach(function(s){window.__adiSubMap[s.code]=s;});
+    var groups={};subs.forEach(function(s){(groups[s.part]=groups[s.part]||[]).push(s);});
+    $("#adiSub").innerHTML='<option value="">All subparts</option>'+Object.keys(groups).sort().map(function(p){
+      return '<optgroup label="'+esc(ADI_PARTS[p]||("40 CFR Part "+p))+'">'+groups[p].map(function(s){
+        return '<option value="'+esc(s.code)+'">'+esc(s.subpart)+(s.description?" — "+esc(s.description):"")+' ('+s.n_dets+')</option>';
+      }).join("")+'</optgroup>';
+    }).join("");
+  }catch(e){}
+}
+function adiSubChip(code){var s=(window.__adiSubMap||{})[code];return s?("Pt "+s.part+" Subpt "+s.subpart):code;}
+function adiCard(r){
+  var d=r.letter_date?new Date(r.letter_date+"T00:00:00").toLocaleDateString(undefined,{year:"numeric",month:"short",day:"numeric"}):"undated";
+  var chips=(r.categories||[]).map(function(c){return '<span class="chip" aria-pressed="true" style="cursor:default">'+esc(c)+'</span>';}).join("")+
+            (r.subparts||[]).slice(0,8).map(function(s){return '<span class="chip" style="cursor:default">'+esc(adiSubChip(s))+'</span>';}).join("");
+  var abs=r.abstract
+    ?'<div style="margin-top:8px;white-space:pre-wrap;line-height:1.55">'+esc(r.abstract).replace(/(^|\n)\s*(Q:|A:)/g,"$1<strong>$2</strong>")+'</div>'
+    :'<div class="note" style="margin-top:8px">No abstract in EPA\'s index for this one — open the letter for the full story.</div>';
+  return '<div class="card" style="margin-bottom:10px;padding:14px 16px"><div><a href="'+adiPdf(r.control_number)+'" target="_blank" rel="noopener" style="font-weight:700">'+esc(r.title||r.control_number)+' ↗</a></div>'+
+    '<div class="note" style="margin:4px 0 7px">'+esc(r.control_number)+' · '+d+(r.office?" · "+esc(r.office):"")+(r.author?" · "+esc(r.author):"")+'</div>'+
+    (chips?'<div class="filters" style="margin:0;gap:5px">'+chips+'</div>':"")+abs+'</div>';
+}
+async function adiSearch(){
+  if(!window.__USER||!sbc)return;
+  var q=$("#adiQ").value.trim(),sub=$("#adiSub").value,cat=$("#adiCat").value;
+  var a=$("#adiA"),b=$("#adiBtn");a.classList.add("show");b.disabled=true;b.innerHTML='<span class="spin"></span>';
+  try{
+    var qy=sbc.from("adi_determinations").select("control_number,title,letter_date,categories,office,author,abstract,subparts",{count:"exact"});
+    if(q)qy=qy.textSearch("fts",q,{type:"websearch",config:"english"});
+    if(sub)qy=qy.contains("subparts",[sub]);
+    if(cat)qy=qy.contains("categories",[cat]);
+    var res=await qy.order("letter_date",{ascending:false,nullsFirst:false}).limit(50);
+    if(res.error)throw res.error;
+    var rows=res.data||[],total=(res.count==null)?rows.length:res.count;
+    if(!rows.length){a.innerHTML='<div class="note">No determinations matched. Try fewer or different keywords, or clear the subpart/category filters.</div>';}
+    else{
+      a.innerHTML='<div class="note" style="margin-bottom:10px"><b>'+total.toLocaleString()+'</b> determination'+(total===1?"":"s")+(total>rows.length?" — showing the "+rows.length+" most recent":"")+'. Titles link to EPA\'s original letter.</div>'+
+        rows.map(adiCard).join("")+
+        '<div class="note" style="margin-top:10px">Source: EPA <a href="https://cfpub.epa.gov/adi/" target="_blank" rel="noopener">Applicability Determination Index ↗</a>. Q/A summaries are EPA\'s own abstracts — always read the full letter before acting.</div>';
+    }
+  }catch(e){a.innerHTML='<div class="note">Search failed — try again in a moment.</div>';}
+  b.disabled=false;b.textContent="Search";
+}
+(function(){
+  var b=$("#adiBtn"),q=$("#adiQ");
+  if(b)b.onclick=adiSearch;
+  if(q)q.addEventListener("keydown",function(e){if(e.key==="Enter")adiSearch();});
+  var s=$("#adiSub"),c=$("#adiCat");
+  if(s)s.onchange=adiSearch;if(c)c.onchange=adiSearch;
+})();
+
 /* --- onAuth override: also load profile, community, admin --- */
 async function onAuth(session){
   window.__USER=session?session.user:null;
   renderAcct();renderFeedbackBody();
   if(window.__USER){await loadProfileFromAccount();await refreshProfile();}
-  renderFacBanner();renderFeed();renderProfileSection();buildAdminTab();loadCommunity();
+  renderFacBanner();renderFeed();renderProfileSection();buildAdminTab();loadCommunity();renderAdiGate();
 }
 (function(){var bg=$("#profBg");if(bg){bg.onclick=function(e){if(e.target===bg)bg.classList.remove("open");};var x=$("#profClose");if(x)x.onclick=function(){bg.classList.remove("open");};}})();
-loadCommunity();renderProfileSection();
+loadCommunity();renderProfileSection();renderAdiGate();
 
 </script>
 </body>
