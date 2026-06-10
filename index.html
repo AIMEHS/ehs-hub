@@ -296,6 +296,24 @@ button.citelink:hover{background:rgba(14,165,233,.18);text-decoration:underline}
 .backlink a{color:var(--accent);font-weight:600;text-decoration:none}
 .backlink a:hover{text-decoration:underline}
 
+/* ---- easter eggs (#9) ---- */
+[data-theme="busters"]{--bg:#0a0a0a;--panel:#161616;--panel2:#1d1d1d;--ink:#f7f4f1;--muted:#b8b0a8;--line:#2b2b2b;--brand:#FF6C00;--brand-ink:#000000;--accent:#FF6C00;--good:#27c07d;--warn:#ffb020;--bad:#ff5544;--chip:#232323;--chip-ink:#f0e6dc;--shadow:0 1px 2px rgba(0,0,0,.5),0 10px 30px rgba(255,108,0,.08);--glow:0 0 18px rgba(255,108,0,.35)}
+[data-theme="busters"] .dot{background:#FF6C00;box-shadow:0 0 10px rgba(255,108,0,.8)}
+[data-theme="busters"] h1,[data-theme="busters"] h2{letter-spacing:.01em}
+.bustlogo{height:32px;width:32px;margin-right:7px;flex:none;display:inline-block;vertical-align:middle}
+#leakGame{position:fixed;inset:0;z-index:400;background:rgba(5,5,8,.96);cursor:crosshair;user-select:none;-webkit-user-select:none;touch-action:none}
+#leakGame .lgHud{position:absolute;top:14px;left:50%;transform:translateX(-50%);display:flex;gap:18px;align-items:center;font-weight:800;font-size:14px;color:#fff;background:rgba(0,0,0,.5);padding:8px 16px;border-radius:999px;white-space:nowrap}
+#leakGame .lgPpm{color:#7CFC9B;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;min-width:128px;text-align:right}
+#leakGame .lgMsg{position:absolute;bottom:26px;left:0;right:0;text-align:center;color:#cfd6df;font-size:13.5px;padding:0 22px;line-height:1.5}
+#leakGame .lgX{position:absolute;top:12px;right:14px;background:transparent;border:1px solid #555;color:#ddd;border-radius:8px;padding:6px 12px;cursor:pointer;font-weight:700}
+.stampbox{position:relative}
+.stamp{position:absolute;top:10px;right:12px;z-index:50;font-weight:900;font-size:19px;letter-spacing:.08em;padding:4px 12px;border:3px solid;border-radius:6px;transform:rotate(-12deg);opacity:.88;pointer-events:none;font-family:'Courier New',monospace;text-transform:uppercase}
+.stamp.ok{color:#1da963;border-color:#1da963;background:rgba(29,169,99,.07)}
+.stamp.bad{color:#d23b3b;border-color:#d23b3b;background:rgba(210,59,59,.07)}
+.leaf{position:fixed;top:-40px;z-index:390;pointer-events:none;animation:leaffall linear forwards}
+@keyframes leaffall{to{transform:translateY(110vh) rotate(540deg)}}
+@media (prefers-reduced-motion: reduce){.leaf{display:none}}
+
 /* tickets parity + expert title + delete */
 .pscol{display:flex;flex-direction:column;line-height:1.15;gap:1px}
 .psname{display:inline-flex;align-items:center;gap:5px}
@@ -492,15 +510,26 @@ $("#yr").textContent=new Date().getFullYear();
 
 /* ---------- THEME SYSTEM ---------- */
 const THEMES=[{id:"light",name:"Light",sw:"#2563eb"},{id:"dark",name:"Dark command-center",sw:"#22d3ee"},{id:"aim",name:"AIM brand",sw:"#e24751"}];
-const CYBER={id:"cyber",name:"⚡ Cyberpunk 80s",sw:"#ff2bd6"};
-function cyberUnlocked(){return localStorage.getItem("hubCyber")==="1";}
-function availThemes(){return cyberUnlocked()?[...THEMES,CYBER]:THEMES.slice();}
-function applyTheme(id){var prev=document.documentElement.dataset.theme;if(id!=="cyber"&&cyberUnlocked()){localStorage.removeItem("hubCyber");if(prev==="cyber")toast("⚡ Secret theme re-locked — you know the code");}document.documentElement.dataset.theme=id;localStorage.setItem("hubTheme",id);const t=[...THEMES,CYBER].find(x=>x.id===id)||THEMES[0];$("#themeName").textContent=t.name.replace("⚡ ","");renderThemeMenu();}
+const SECRETS={cyber:{id:"cyber",name:"⚡ Cyberpunk 80s",sw:"#ff2bd6",ls:"hubCyber",toast:"⚡ SECRET THEME UNLOCKED"},busters:{id:"busters",name:"🟠 LDAR Busters",sw:"#FF6C00",ls:"hubBusters",toast:"📞 WHO YA GONNA CALL? LDAR BUSTERS."}};
+function allThemes(){return [...THEMES,...Object.values(SECRETS)];}
+function availThemes(){return [...THEMES,...Object.values(SECRETS).filter(t=>localStorage.getItem(t.ls)==="1")];}
+function applyTheme(id){
+  var prev=document.documentElement.dataset.theme;
+  Object.values(SECRETS).forEach(function(s){
+    if(id!==s.id&&localStorage.getItem(s.ls)==="1"){localStorage.removeItem(s.ls);if(prev===s.id)toast(s.sw==="#FF6C00"?"🟠 Busters re-locked — you know the word":"⚡ Secret theme re-locked — you know the code");}
+  });
+  document.documentElement.dataset.theme=id;localStorage.setItem("hubTheme",id);
+  const t=allThemes().find(x=>x.id===id)||THEMES[0];
+  $("#themeName").textContent=t.name.replace(/^[^A-Za-z]+/,"");
+  if(typeof applyBusters==="function")applyBusters(id==="busters");
+  renderThemeMenu();
+}
 function renderThemeMenu(){const m=$("#themeMenu");const cur=document.documentElement.dataset.theme;m.innerHTML=availThemes().map(t=>`<div data-t="${t.id}"><span class="swatch" style="background:${t.sw}"></span>${t.name}${t.id===cur?" ✓":""}</div>`).join("");$$("#themeMenu div").forEach(d=>d.onclick=()=>{applyTheme(d.dataset.t);m.classList.remove("open");});}
 $("#themeToggle").onclick=e=>{e.stopPropagation();$("#themeMenu").classList.toggle("open");};
 document.addEventListener("click",()=>$("#themeMenu").classList.remove("open"));
-applyTheme(localStorage.getItem("hubTheme")&&([...THEMES,CYBER].some(t=>t.id===localStorage.getItem("hubTheme")))?localStorage.getItem("hubTheme"):"aim");
-function unlockCyber(){if(cyberUnlocked())return;localStorage.setItem("hubCyber","1");renderThemeMenu();applyTheme("cyber");toast("⚡ SECRET THEME UNLOCKED");}
+applyTheme(localStorage.getItem("hubTheme")&&(allThemes().some(t=>t.id===localStorage.getItem("hubTheme"))&&(!SECRETS[localStorage.getItem("hubTheme")]||localStorage.getItem(SECRETS[localStorage.getItem("hubTheme")].ls)==="1"))?localStorage.getItem("hubTheme"):"aim");
+function unlockSecret(key){var s=SECRETS[key];if(!s)return;if(localStorage.getItem(s.ls)==="1"&&document.documentElement.dataset.theme===s.id)return;localStorage.setItem(s.ls,"1");applyTheme(s.id);toast(s.toast);}
+function unlockCyber(){unlockSecret("cyber");}
 /* Konami (desktop) */
 const KONAMI=["ArrowUp","ArrowUp","ArrowDown","ArrowDown","ArrowLeft","ArrowRight","ArrowLeft","ArrowRight","b","a","Enter"];
 let kpos=0;
@@ -595,6 +624,7 @@ $("#enfBtn").onclick=async()=>{
     const d=await r.json();
     if(d.facilities&&d.facilities.length){
       var snap=d.cached&&d.fetched_at?'<div class="note" style="margin:0 0 8px">📸 Snapshot from EPA ECHO, saved '+esc(String(d.fetched_at).slice(0,10))+(d.stale?' — EPA is limiting live queries right now, so you\'re seeing the most recent saved result. The link below is always current.':'')+'</div>':"";
+      if(d.source==="bulk")snap='<div class="note" style="margin:0 0 8px">📦 EPA is limiting live lookups right now, so these results come from our weekly copy of EPA\'s official ECHO bulk dataset (loaded '+esc(String(d.bulk_loaded_at||"").slice(0,10))+'). Facilities with the most recent compliance issues are listed first. The link below is always current.</div>';
       a.innerHTML='<h4>'+esc(d.count||d.facilities.length)+' facilities in '+esc(st)+'</h4>'+snap+d.facilities.map(f=>`<div class="efac"><div class="en">${esc(f.name||"(facility)")}</div><div class="em">${esc(f.city||"")}${f.city?", ":""}${esc(f.state||st)}${f.naics?" · NAICS "+esc(f.naics):""}</div><div class="ep">${f.status?'<span>Status: <b>'+esc(f.status)+'</b></span>':""}${f.inspections?'<span>Inspections: <b>'+esc(f.inspections)+'</b></span>':""}${f.penalties?'<span>Penalties: <b>'+esc(f.penalties)+'</b></span>':""}${f.lastInspection?'<span>Last insp: <b>'+esc(f.lastInspection)+'</b></span>':""}</div>${f.dfr?'<a class="src" href="'+esc(f.dfr)+'" target="_blank" rel="noopener" style="font-size:12px">Detailed facility report ↗</a>':""}</div>`).join("")+'<div class="note">Source: EPA ECHO. <a href="'+esc(d.link)+'" target="_blank" rel="noopener">Open full results on EPA ECHO ↗</a></div>';
     }else{
       a.innerHTML='<div class="note"><b>Why no results?</b> EPA allows each server about 300 ECHO lookups per hour, and our host\'s shared allowance is used up at the moment — nothing is broken on your end, and it usually clears within the hour. Once one search gets through, the Hub saves a snapshot so later searches load instantly. Your exact search is always available on EPA\'s official site:</div><div style="margin-top:10px"><a class="btn" href="'+esc(d.link||("https://echo.epa.gov/facilities/facility-search/results?p_st="+st))+'" target="_blank" rel="noopener">Open '+esc(st)+' results on EPA ECHO ↗</a></div>';
@@ -682,7 +712,9 @@ async function summarizeCfr(cite,text){
     sa.innerHTML=d.answer?'<h4>Plain-English summary</h4><div>'+mdLite(d.answer)+'</div><div class="note">Summary generated from the eCFR text — orientation only; the rule text above is authoritative.</div>':'<div class="note">Couldn’t summarize right now.</div>';
   }catch(e){sa.innerHTML='<div class="note">Couldn’t summarize right now.</div>';}
 }
-$("#rBtn").onclick=function(){var v=$("#rQ").value.trim();if(!v){$("#rQ").focus();return;}var al=aliasFor(v);if(al){if(al.length===1)doRuleLookup(al[0].p);else showROptions(al,v);return;}var c=parseCite(v);doRuleLookup(c||{q:v});};
+$("#rBtn").onclick=function(){var v=$("#rQ").value.trim();if(!v){$("#rQ").focus();return;}
+  if(v==="42"){var a=$("#rA");a.classList.add("show");a.innerHTML='<h4>42</h4><div class="cfrtext">The answer to life, the universe, and everything.\n\nUnfortunately, it is not an affirmative defense under 40 CFR — you still have to file the report.\n\n— Deep Thought, after 7.5 million years of regulatory review</div>';return;}
+  var al=aliasFor(v);if(al){if(al.length===1)doRuleLookup(al[0].p);else showROptions(al,v);return;}var c=parseCite(v);doRuleLookup(c||{q:v});};
 $("#rQ").addEventListener("input",renderRSugg);
 $("#rQ").addEventListener("keydown",function(e){if(e.key==="Enter")$("#rBtn").click();});
 renderRSugg();
@@ -854,6 +886,108 @@ document.addEventListener("click",function(e){
   var b=e.target&&e.target.closest?e.target.closest("button.citelink"):null;
   if(b&&b.dataset.cite)openRef(b.dataset.cite);
 });
+
+/* ---------- EASTER EGGS (#9) ---------- */
+/* LDAR Busters brand takeover (active only while the secret theme is on) */
+var BRAND_ORIG=null;
+var BUST_SVG='<svg class="bustlogo" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="39" fill="none" stroke="#FF6C00" stroke-width="7"/><text x="50" y="47" text-anchor="middle" font-family="\'Arial Black\',Arial,sans-serif" font-weight="900" font-size="20" fill="#fff">LDAR</text><text x="50" y="69" text-anchor="middle" font-family="\'Arial Black\',Arial,sans-serif" font-weight="900" font-size="17" fill="#fff">BUSTERS</text></svg>';
+function applyBusters(on){
+  var brand=document.querySelector(".brand"),foot=document.querySelector("footer");
+  if(!brand||!foot)return;
+  var bls=$$(".backlink");
+  if(on){
+    if(!BRAND_ORIG)BRAND_ORIG={brand:brand.innerHTML,foot:foot.innerHTML,title:document.title,bls:bls.map(function(b){return b.innerHTML;})};
+    brand.innerHTML='<span class="dot"></span>'+BUST_SVG+'<b>LDAR&nbsp;BUSTERS</b>&nbsp;Hub';
+    document.title="EHS Compliance Hub — LDAR Busters";
+    foot.innerHTML='© '+(new Date().getFullYear())+' LDAR Busters™ — the original leak-detection crew · <a href="https://aim-env.com" target="_blank" rel="noopener">aim-env.com</a>';
+    bls.forEach(function(b){b.innerHTML='Brought to you by <a href="https://aim-env.com/">LDAR Busters — busting fugitive emissions since day one · aim-env.com ↗</a>';});
+  }else if(BRAND_ORIG){
+    brand.innerHTML=BRAND_ORIG.brand;document.title=BRAND_ORIG.title;foot.innerHTML=BRAND_ORIG.foot;
+    bls.forEach(function(b,i){if(BRAND_ORIG.bls[i]!=null)b.innerHTML=BRAND_ORIG.bls[i];});
+    var y=document.querySelector("footer #yr");if(y)y.textContent=new Date().getFullYear();
+  }
+}
+/* typed-word triggers: "busters" theme + "leak" mini-game (ignored while typing in fields) */
+var kbuf="";
+document.addEventListener("keydown",function(e){
+  var t=e.target;
+  if(t&&(t.tagName==="INPUT"||t.tagName==="TEXTAREA"||t.isContentEditable))return;
+  if(!e.key||e.key.length!==1)return;
+  kbuf=(kbuf+e.key.toLowerCase()).slice(-12);
+  if(kbuf.slice(-7)==="busters"){kbuf="";unlockSecret("busters");}
+  else if(kbuf.slice(-4)==="leak"){kbuf="";startLeakGame();}
+});
+/* Method 21 mini-game */
+var LG=null;
+function startLeakGame(){
+  if(LG)return;
+  var el=document.createElement("div");el.id="leakGame";
+  el.innerHTML='<div class="lgHud"><span>🔍 Method 21</span><span class="lgPpm">0 ppm</span><span class="lgT">60s</span></div><div class="lgMsg">A component on this screen is leaking. Sweep your probe (cursor / finger) — the reading climbs as you close in. Tag it with a click when you read <b>≥ 10,000 ppm</b>.</div><button class="lgX">✕ quit</button>';
+  document.body.appendChild(el);LG=el;
+  var W=window.innerWidth,H=window.innerHeight;
+  var lx=70+Math.random()*(W-140), ly=110+Math.random()*(H-220);
+  var ppmEl=el.querySelector(".lgPpm"),tEl=el.querySelector(".lgT");
+  var t0=Date.now();
+  var timer=setInterval(function(){var left=60-Math.floor((Date.now()-t0)/1000);tEl.textContent=Math.max(0,left)+"s";if(left<=0)end(false);},250);
+  function ppmAt(x,y){var d=Math.hypot(x-lx,y-ly);return Math.max(0,Math.round(100000*Math.exp(-d/110)));}
+  el.addEventListener("pointermove",function(e){var p=ppmAt(e.clientX,e.clientY);ppmEl.textContent=p.toLocaleString()+" ppm";ppmEl.style.color=p>=10000?"#ff5544":(p>=500?"#ffb020":"#7CFC9B");});
+  el.addEventListener("click",function(e){
+    if(e.target.closest(".lgX")){end(null);return;}
+    var p=ppmAt(e.clientX,e.clientY);
+    if(p>=10000)end(true,Math.max(1,Math.round((Date.now()-t0)/1000)));
+    else toast("Only "+p.toLocaleString()+" ppm there — keep sweeping");
+  });
+  function onEsc(ev){if(ev.key==="Escape")end(null);}
+  document.addEventListener("keydown",onEsc);
+  function end(won,secs){
+    clearInterval(timer);document.removeEventListener("keydown",onEsc);el.remove();LG=null;
+    var best=+(localStorage.getItem("hubLeakBest")||0);
+    if(won===true){
+      if(!best||secs<best){localStorage.setItem("hubLeakBest",String(secs));toast("💨 LEAK FOUND in "+secs+"s — new personal best! First attempt at repair within 5 days, you know the drill.");}
+      else toast("💨 LEAK FOUND in "+secs+"s (best: "+best+"s). Tag it, log it, fix it.");
+    }else if(won===false)toast("⏱ Survey window closed — the leak got away. Type “leak” to retry.");
+  }
+}
+/* Earth Day (Apr 22): falling leaves */
+(function(){
+  var d=new Date();if(d.getMonth()!==3||d.getDate()!==22)return;
+  if(window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches)return;
+  setTimeout(function(){
+    toast("🌍 Happy Earth Day from the Hub");
+    var em=["🍃","🌿","🍂"];
+    for(var i=0;i<26;i++){
+      var s=document.createElement("span");s.className="leaf";s.textContent=em[i%3];
+      s.style.left=Math.random()*100+"vw";s.style.fontSize=(14+Math.random()*18)+"px";
+      s.style.animationDuration=(6+Math.random()*7)+"s";s.style.animationDelay=(Math.random()*6)+"s";
+      document.body.appendChild(s);
+      setTimeout(function(x){return function(){x.remove();};}(s),16000);
+    }
+  },1200);
+})();
+/* Audit mode: click the logo dot 5× fast */
+(function(){
+  var clicks=0,t=null,running=false;
+  document.addEventListener("click",function(e){
+    if(!e.target.closest||!e.target.closest(".brand .dot"))return;
+    clicks++;clearTimeout(t);t=setTimeout(function(){clicks=0;},2500);
+    if(clicks>=5){clicks=0;run();}
+  });
+  function run(){
+    if(running)return;running=true;
+    toast("📋 SURPRISE AUDIT — preliminary determinations incoming");
+    var cards=$$(".panel.active .card");if(!cards.length)cards=$$(".card").slice(0,8);
+    cards=cards.slice(0,12);
+    var stamps=[];
+    cards.forEach(function(c,i){setTimeout(function(){
+      var ok=Math.random()<0.62;
+      var s=document.createElement("span");s.className="stamp "+(ok?"ok":"bad");s.textContent=ok?"APPROVED":"FINDING";
+      c.classList.add("stampbox");c.appendChild(s);stamps.push(s);
+    },i*330);});
+    setTimeout(function(){stamps.forEach(function(s){s.remove();});toast("Audit complete — no further action required. (This was a drill.)");running=false;},11000);
+  }
+})();
+/* if the page loaded straight into the busters theme, apply the takeover now */
+if(document.documentElement.dataset.theme==="busters")applyBusters(true);
 
 /* ---------- ACCOUNTS (Supabase Auth) ---------- */
 window.__custom=window.__custom||{pinned:new Set(),hidden:new Set(),ack:new Set()};
