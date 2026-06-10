@@ -1,0 +1,31 @@
+name: Weekly ECHO data refresh
+# Downloads EPA's ECHO Exporter, filters it to the Hub's slim subset,
+# commits data/echo_slim.csv.gz, and tells the Supabase loader to re-ingest.
+# No secrets required: the data is public and the loader only reads from this repo.
+on:
+  schedule:
+    - cron: "0 9 * * 1"   # Mondays 09:00 UTC
+  workflow_dispatch: {}
+permissions:
+  contents: write
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download ECHO Exporter (~450MB)
+        run: curl -sL --retry 3 -o /tmp/echo_exporter.zip https://echo.epa.gov/files/echodownloads/echo_exporter.zip
+      - name: Filter + gzip
+        run: |
+          unzip -p /tmp/echo_exporter.zip ECHO_EXPORTER.csv | python3 scripts/filter_echo.py /dev/stdin /tmp/echo_slim.csv
+          mkdir -p data
+          gzip -9 -c /tmp/echo_slim.csv > data/echo_slim.csv.gz
+      - name: Commit refreshed data
+        run: |
+          git config user.name "echo-refresh-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/echo_slim.csv.gz
+          git diff --cached --quiet || git commit -m "Weekly ECHO Exporter refresh ($(date -u +%F))"
+          git push
+      - name: Reload Supabase echo_bulk table
+        run: curl -s -m 300 -X POST "https://xnaseutcmkgukphslpkv.supabase.co/functions/v1/echo-load?force=1"
