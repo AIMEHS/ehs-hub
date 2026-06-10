@@ -40,19 +40,42 @@ def main():
         for ctrl in ctrls:
             ctrl_subs.setdefault(ctrl, []).append(c)
 
+    extra_path = os.path.join(args.scrape, 'extra.json')
+    extra = json.load(open(extra_path)) if os.path.exists(extra_path) else {}
+
+    def iso_date(us):
+        m = re.match(r'(\d{2})/(\d{2})/(\d{4})$', us or '')
+        return f'{m.group(3)}-{m.group(1)}-{m.group(2)}' if m else None
+
     recs = []
+    seen = set()
     for r in rows:
         ctrl = r['control_number']
         d = details.get(ctrl, {})
-        mm, dd, yyyy = r['date'].split('/')
         cats = [c.strip() for c in (r['categories'] or '').split(',') if c.strip()]
+        seen.add(ctrl)
         recs.append({
             'control_number': ctrl,
             'title': r['title'],
-            'letter_date': f'{yyyy}-{mm}-{dd}',
+            'letter_date': iso_date(r['date']),
             'categories': cats,
             'office': r['office'] or None,
             'author': r['author'] or None,
+            'abstract': d.get('abstract') or None,
+            'subparts': sorted(set(ctrl_subs.get(ctrl, []))),
+        })
+    # records only reachable via subpart queries (mostly undated letters)
+    for ctrl, d in extra.items():
+        if ctrl in seen:
+            continue
+        cats = [c.strip() for c in (d.get('categories') or '').split(',') if c.strip()]
+        recs.append({
+            'control_number': ctrl,
+            'title': d.get('title') or ctrl,
+            'letter_date': iso_date(d.get('date')),
+            'categories': cats,
+            'office': d.get('office') or None,
+            'author': d.get('author') or None,
             'abstract': d.get('abstract') or None,
             'subparts': sorted(set(ctrl_subs.get(ctrl, []))),
         })
@@ -82,7 +105,7 @@ def main():
             vals.append('(' + ','.join([
                 "'" + esc(r['control_number']) + "'",
                 "'" + esc(r['title']) + "'",
-                "'" + r['letter_date'] + "'",
+                ("'" + r['letter_date'] + "'") if r['letter_date'] else 'null',
                 arr(r['categories']),
                 ("'" + esc(r['office']) + "'") if r['office'] else 'null',
                 ("'" + esc(r['author']) + "'") if r['author'] else 'null',

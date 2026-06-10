@@ -113,7 +113,7 @@ def main():
     # ---- Phase A: all rows -------------------------------------------------
     rows_path = os.path.join(args.out, 'rows.json')
     sess = Session()
-    res = run_query(sess, {'begindate': '01/01/1975', 'enddate': '12/31/2030'})
+    res = run_query(sess, {'begindate': '01/01/1960', 'enddate': '12/31/2030'})
     act3, fields3 = parse_form(res)
     rows = parse_rows(res)
     json.dump(rows, open(rows_path, 'w'))
@@ -134,7 +134,7 @@ def main():
         except Exception as e:
             print(f'B: chunk {i} failed ({e}); new session', flush=True)
             sess = Session()
-            res = run_query(sess, {'begindate': '01/01/1975', 'enddate': '12/31/2030'})
+            res = run_query(sess, {'begindate': '01/01/1960', 'enddate': '12/31/2030'})
             act3, fields3 = parse_form(res)
             f = dict(fields3); f['fuseaction'] = 'home.dsp_show_results'; f['control_number'] = chunk
             got = parse_details(sess.get(act3, f))
@@ -169,6 +169,34 @@ def main():
         json.dump(smap, open(map_path, 'w'))
         if n % 10 == 0:
             print(f'C: {len(smap)}/{len(opts)} subparts', flush=True)
+
+    # ---- Phase D: records the date-range query missed (undated letters) ----
+    # Subpart queries can surface control numbers the date-range query missed
+    # (e.g. pre-range letters); fetch their blocks via the detail view.
+    have = {r['control_number'] for r in rows}
+    missing = sorted({c for v in smap.values() for c in v} - have - set(details))
+    extra_path = os.path.join(args.out, 'extra.json')
+    extra = json.load(open(extra_path)) if os.path.exists(extra_path) else {}
+    missing = [c for c in missing if c not in extra]
+    if missing:
+        sess = Session()
+        res = run_query(sess, {'begindate': '01/01/1960', 'enddate': '12/31/2030'})
+        act3, fields3 = parse_form(res)
+        for i in range(0, len(missing), args.chunk):
+            chunk = missing[i:i + args.chunk]
+            f = dict(fields3)
+            f['fuseaction'] = 'home.dsp_show_results'
+            f['control_number'] = chunk
+            det = sess.get(act3, f)
+            for b in re.split(r'<input name="control_number" type="checkbox" value="', det)[1:]:
+                ctrl = b[:b.index('"')]
+                tm = re.search(r'target="_blank">(.*?)</A>&nbsp;\(' + re.escape(ctrl) + r'\)&nbsp;([0-9/]*)', b, re.S)
+                rec = parse_details('<input name="control_number" type="checkbox" value="' + b).get(ctrl, {})
+                rec['title'] = re.sub(r'\s+', ' ', H.unescape(re.sub(r'<[^>]+>', '', tm.group(1)))).strip() if tm else ctrl
+                rec['date'] = (tm.group(2).strip() if tm else '') or ''
+                extra[ctrl] = rec
+            json.dump(extra, open(extra_path, 'w'))
+            print(f'D: {len(extra)} undated/missed records', flush=True)
     print('DONE', flush=True)
 
 
