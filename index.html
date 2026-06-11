@@ -1698,7 +1698,7 @@ if(!sbc&&!window.__pvSent){window.__pvSent=true;pvSend("view");}
   ready(function(){ setTimeout(init,150); });
   function init(){
     try{
-      ['pA','adiA'].forEach(function(id){
+      ['pA','adiA','rA'].forEach(function(id){
         var el=document.getElementById(id); if(!el) return;
         var obs=new MutationObserver(function(){
           var txt=(el.textContent||'').trim(); if(!txt) return;
