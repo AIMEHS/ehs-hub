@@ -435,7 +435,7 @@ button.citelink:hover{background:rgba(14,165,233,.18);text-decoration:underline}
   <!-- ADI — APPLICABILITY DETERMINATIONS -->
   <section class="panel" id="p-adi">
   <div class="card tool">
-    <h2>ADI Index — EPA applicability determinations</h2>
+    <h2>Applicability Determination Index (ADI)</h2>
     <p class="lead">Search EPA's <b>Applicability Determination Index</b> — 3,800+ official EPA letters and memos answering real-world questions on applicability, monitoring, recordkeeping, and reporting under NSPS, NESHAP/MACT, asbestos, woodstoves, and CFC rules. EPA's own ADI site is notoriously hard to use; here you can search it like a search engine — by keyword, subpart, or category — and every result links to EPA's original letter. Pick a subpart and hit <b>Subpart packet</b> for a printable digest of every determination under it.</p>
     <div id="adiGate"></div>
     <div id="adiTool" style="display:none">
@@ -567,7 +567,7 @@ document.addEventListener("touchstart",e=>{const t=e.changedTouches[0];tx=t.scre
 document.addEventListener("touchend",e=>{const t=e.changedTouches[0];const dx=t.screenX-tx,dy=t.screenY-ty;if(Math.max(Math.abs(dx),Math.abs(dy))<28)return;let d=Math.abs(dx)>Math.abs(dy)?(dx>0?"R":"L"):(dy>0?"D":"U");if(d===SWIPE[spos]){spos++;if(spos===SWIPE.length){spos=0;unlockCyber();}}else{spos=(d===SWIPE[0])?1:0;}},{passive:true});
 
 /* ---------- TABS ---------- */
-const TABS=[["dashboard","Dashboard"],["ask","Community"],["enf","Enforcement"],["rules","Rule lookup"],["packet","Requirements packet"],["adi","ADI Index"],["fac","My account"]];
+const TABS=[["dashboard","Dashboard"],["ask","Community"],["enf","Enforcement"],["rules","Rule lookup"],["packet","Requirements packet"],["adi","ADI"],["fac","My account"]];
 $("#tabs").innerHTML=TABS.map((t,i)=>`<button class="tab" role="tab" data-p="${t[0]}" aria-selected="${i===0}">${t[1]}</button>`).join("");
 $$(".tab").forEach(b=>b.onclick=()=>{$$(".tab").forEach(x=>x.setAttribute("aria-selected","false"));b.setAttribute("aria-selected","true");$$(".panel").forEach(p=>p.classList.remove("active"));$("#p-"+b.dataset.p).classList.add("active");window.scrollTo({top:0,behavior:"smooth"});});
 
@@ -1689,6 +1689,54 @@ async function onAuth(session){
 loadCommunity();renderProfileSection();renderAllGates();
 if(!sbc&&!window.__pvSent){window.__pvSent=true;pvSend("view");}
 
+</script>
+
+<script>
+/* ==== EHS Hub ticket fixes: #15 auto-scroll to results, #16 community unread badge ==== */
+(function(){
+  function ready(fn){ if(document.readyState!=='loading') fn(); else document.addEventListener('DOMContentLoaded',fn); }
+  ready(function(){ setTimeout(init,150); });
+  function init(){
+    try{
+      ['pA','adiA'].forEach(function(id){
+        var el=document.getElementById(id); if(!el) return;
+        var obs=new MutationObserver(function(){
+          var txt=(el.textContent||'').trim(); if(!txt) return;
+          var r=el.getBoundingClientRect();
+          if(r.top<0 || r.top>window.innerHeight*0.45){ el.scrollIntoView({behavior:'smooth',block:'start'}); }
+        });
+        obs.observe(el,{childList:true});
+      });
+    }catch(e){}
+    try{ commUnread(); }catch(e){}
+  }
+  function cTab(){ return document.querySelector('.tab[data-p="ask"]'); }
+  function cSeen(){ try{ return localStorage.getItem('hubAskSeen')||''; }catch(e){ return ''; } }
+  function cMark(){ try{ localStorage.setItem('hubAskSeen', new Date().toISOString()); }catch(e){} }
+  function cClear(){ var t=cTab(); if(t){ var b=t.querySelector('.tabdot'); if(b) b.remove(); } }
+  function cBadge(n){
+    var t=cTab(); if(!t) return;
+    var b=t.querySelector('.tabdot');
+    if(!b){ b=document.createElement('span'); b.className='tabdot'; b.setAttribute('aria-label','unread community posts'); t.appendChild(b); }
+    b.style.cssText='display:inline-block;min-width:17px;height:17px;line-height:17px;padding:0 5px;margin-left:6px;border-radius:9px;background:#e23b2e;color:#fff;font-size:11px;font-weight:700;text-align:center;vertical-align:middle';
+    b.textContent = n>9 ? '9+' : String(n);
+  }
+  async function commUnread(){
+    var t=cTab(); if(!t) return;
+    t.addEventListener('click', function(){ cMark(); cClear(); });
+    if(t.getAttribute('aria-selected')==='true' || location.hash==='#ask'){ cMark(); }
+    if(typeof SB==='undefined' || typeof HDRS==='undefined') return;
+    var since=cSeen() || '1970-01-01T00:00:00Z';
+    try{
+      var url=SB+'/rest/v1/community_posts?select=id,user_id,created_at&status=eq.approved&created_at=gt.'+encodeURIComponent(since)+'&order=created_at.desc';
+      var r=await fetch(url,{headers:HDRS}); if(!r.ok) return;
+      var rows=await r.json();
+      var me=(window.__USER&&window.__USER.id)||null;
+      var n=rows.filter(function(x){ return !me || x.user_id!==me; }).length;
+      if(n>0) cBadge(n); else cClear();
+    }catch(e){}
+  }
+})();
 </script>
 </body>
 </html>
