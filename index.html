@@ -1165,7 +1165,7 @@ async function adminDeletePost(id){
 function poster(p){
   if(p.anonymous)return '<span class="psr">'+avatarHTML("?",null,false)+'<b>Anonymous</b></span>';
   var check=p.author_sme?' <span class="bluecheck" title="Verified EHS expert">✓</span>':'';
-  var fb=(typeof founderBadge==='function')?founderBadge(p.author_founder):'';
+  var fb=(typeof memberBadge==='function')?memberBadge(p.author_badge,p.author_founder):'';
   var title=p.author_sme?'<span class="smetag">Verified EHS expert</span>':'';
   return '<span class="psr">'+avatarHTML(p.author_name,p.author_photo,p.author_sme)+'<span class="pscol"><span class="psname"><b class="authlink" data-uid="'+esc(p.user_id||"")+'">'+esc(p.author_name||"Member")+'</b>'+check+fb+'</span>'+title+'</span></span>';
 }
@@ -1178,7 +1178,7 @@ async function openProfile(uid){
     var initials=((p.display_name||"?").trim().slice(0,1)||"?").toUpperCase();
     var img=p.photo_url?'<img src="'+esc(p.photo_url)+'" alt="">':'<span>'+esc(initials)+'</span>';
     var check=p.is_sme?' <span class="bluecheck">✓</span>':'';
-    var fb=(typeof founderBadge==='function')?founderBadge(p.founder_number,true):'';
+    var fb=(typeof memberBadge==='function')?memberBadge(p.special_badge,p.founder_number,true):'';
     $("#profBody").innerHTML='<div class="pbig"><span class="avatar xl">'+img+'</span><div><div class="pname">'+esc(p.display_name||"Member")+check+'</div>'+(p.is_sme?'<div class="smetag">Verified EHS expert</div>':"")+(fb?'<div style="margin-top:4px">'+fb+'</div>':"")+(p.company?'<div class="pcompany">'+esc(p.company)+'</div>':"")+'</div></div>'+(p.bio?'<p class="pbio">'+esc(p.bio)+'</p>':'<p class="note">No bio yet.</p>');
   }catch(e){$("#profBody").innerHTML='<div class="note">Couldn\'t load this profile.</div>';}
 }
@@ -1994,8 +1994,22 @@ if(!sbc&&!window.__pvSent){window.__pvSent=true;pvSend("view");}
     var t=window.founderTier(n); if(!t) return "";
     return '<span class="fbadge ftier-'+t.key+(big?' big':'')+'" title="Founding Member #'+n+' — '+t.name+' ('+t.blurb+')">'+t.emoji+' #'+n+'</span>';
   };
+  /* AIM team badge (Chad + Lance) — overrides the founder tier badge for them */
+  window.aimBadge=function(big){
+    return '<img class="aimbadge'+(big?' big':'')+'" src="/badge-aim.png" alt="AIM" title="AIM EH&S">';
+  };
+  /* pick the right badge for a feed post / profile */
+  window.memberBadge=function(badgeKey,founderNo,big){
+    if(badgeKey==='aim') return window.aimBadge(big);
+    return window.founderBadge(founderNo,big);
+  };
   window.foundingBanner=function(){
-    var p=window.__profile||{}; if(!p.founding_member||!p.founder_number) return "";
+    var p=window.__profile||{};
+    if(p.special_badge==='aim'){
+      return '<div class="foundme aimteam"><div class="fmtop">'+window.aimBadge()+' AIM EH&S team</div>'+
+        '<div class="note" style="margin:4px 0 0">Your AIM mark shows beside your name across the Hub.</div></div>';
+    }
+    if(!p.founding_member||!p.founder_number) return "";
     var t=window.founderTier(p.founder_number);
     return '<div class="foundme ftier-'+t.key+'"><div class="fmtop">'+t.emoji+' Founding Member <b>#'+p.founder_number+'</b> · <span class="fmtier">'+t.name+'</span></div>'+
       '<div class="note" style="margin:4px 0 0">You signed up during the open beta — '+t.blurb+'. This badge is yours to keep and shows beside your name across the Hub. Thank you for helping build it. 🙏</div></div>';
@@ -2018,7 +2032,9 @@ if(!sbc&&!window.__pvSent){window.__pvSent=true;pvSend("view");}
       var wr=await sbc.rpc("founders_wall"); var w=(wr&&wr.data)||[];
       var chips=w.map(function(m){
         var t=window.founderTier(m.founder_number);
-        return '<span class="fwchip ftier-'+t.key+'" title="'+t.name+'">'+t.emoji+' #'+m.founder_number+' '+esc(m.display_name||"Member")+(m.is_sme?' <span class="bluecheck" style="font-size:11px">✓</span>':"")+(m.company?' <span class="note">· '+esc(m.company)+'</span>':"")+'</span>';
+        var lead=(m.special_badge==='aim')?(window.aimBadge()+' #'+m.founder_number):(t.emoji+' #'+m.founder_number);
+        var cls=(m.special_badge==='aim')?'fwchip aimchip':'fwchip ftier-'+t.key;
+        return '<span class="'+cls+'" title="'+(m.special_badge==='aim'?'AIM EH&S':t.name)+'">'+lead+' '+esc(m.display_name||"Member")+(m.is_sme?' <span class="bluecheck" style="font-size:11px">✓</span>':"")+(m.company?' <span class="note">· '+esc(m.company)+'</span>':"")+'</span>';
       }).join("");
       var left=(s.remaining>0)?('<span class="fwleft">'+s.remaining+' of '+s.cap+' spots left</span>'):'<span class="fwleft">all '+s.cap+' claimed</span>';
       host.innerHTML='<div class="card tool fwcard"><h2>⭐ Founding Members '+left+'</h2>'+
@@ -2045,6 +2061,12 @@ html[data-theme="dark"] .ftier-founding{color:#7ce7b3;background:#0f2a1e;border-
 .fwgrid{display:flex;flex-wrap:wrap;gap:7px;margin-top:8px}
 .fwchip{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:700;padding:4px 10px;border-radius:999px;border:1px solid}
 #foundFomo{display:none;margin:10px 0 2px;font-size:13px;padding:9px 11px;border-radius:9px;background:var(--panel2);border:1px solid var(--line);color:var(--ink)}
+.aimbadge{height:16px;width:16px;vertical-align:middle;margin-left:6px;object-fit:contain}
+.aimbadge.big{height:22px;width:22px}
+.aimchip{background:#fff3e8;border:1px solid #ffb877;color:#8a3d00}
+html[data-theme="dark"] .aimchip{background:#2a1a0d;border-color:#7a4a1a;color:#ffb877}
+.foundme.aimteam{background:#fff3e8;border:1px solid #ffb877}
+html[data-theme="dark"] .foundme.aimteam{background:#2a1a0d;border-color:#7a4a1a}
 </style>
 </body>
 </html>
