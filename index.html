@@ -1738,5 +1738,124 @@ if(!sbc&&!window.__pvSent){window.__pvSent=true;pvSend("view");}
   }
 })();
 </script>
+
+<style id="memAdminCSS">
+#admMembersCard .mBar{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+#admMembersCard .mIn{padding:7px 9px;border:1px solid var(--line,#d9d9d9);border-radius:8px;background:var(--panel,#fff);color:inherit;font-size:13px}
+#admMembersCard input.mIn{flex:1;min-width:170px}
+.mCount{font-size:12px;color:var(--muted,#888);font-weight:600;margin-left:6px}
+.mRow{border:1px solid var(--line,#e4e4e4);border-radius:10px;padding:10px 12px;margin-bottom:8px;background:var(--panel,#fff)}
+.mTop{display:flex;align-items:center;gap:10px}
+.mAv{width:38px;height:38px;border-radius:50%;flex:0 0 38px;object-fit:cover;display:inline-flex;align-items:center;justify-content:center;background:var(--brand,#1457a8);color:#fff;font-weight:700;font-size:13px}
+.mName{font-weight:700;font-size:14px;line-height:1.3}
+.mEmail{font-weight:400;font-size:12px;color:var(--muted,#888);margin-top:2px}
+.mTag{display:inline-block;font-size:10px;font-weight:700;padding:1px 7px;border-radius:9px;margin-left:6px;vertical-align:middle;background:var(--chip,#eef0f5);color:var(--ink,#333)}
+.mTok{background:#1457a8;color:#fff}
+.mOk{background:#e6f4ea;color:#137333}
+.mBad{background:#fde7e7;color:#b3261e}
+.mWarn{background:#fef3cd;color:#8a6d00}
+.mMeta{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:11px;color:var(--muted,#888);margin-top:8px}
+.mBio{font-size:12px;margin-top:6px;opacity:.85}
+.mActs{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.btn.xs{padding:4px 10px;font-size:12px}
+.mEdit{margin-top:10px;border-top:1px solid var(--line,#eee);padding-top:10px;display:grid;gap:6px}
+.mEdit label{display:block;font-size:11px;font-weight:600;color:var(--muted,#888)}
+.mEdit input,.mEdit textarea{width:100%;padding:6px 8px;border:1px solid var(--line,#ccc);border-radius:7px;background:var(--panel,#fff);color:inherit;font-size:13px;margin-top:2px}
+.mEdit .mChk{display:flex;align-items:center;gap:6px;font-size:12px}
+.mEdit .mChk input{width:auto;margin:0}
+.mEditBtns{display:flex;gap:8px;margin-top:4px}
+</style>
+<script>
+/* Build 1: Admin Members directory (#12) */
+
+(function(){
+  function ready(fn){ if(document.readyState!=='loading') fn(); else document.addEventListener('DOMContentLoaded',fn); }
+  ready(function(){ setTimeout(initMembers, 250); });
+  function esc2(s){ s=(s==null?'':String(s)); return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+  function ago(ts){ if(!ts) return '—'; var d=new Date(ts); if(isNaN(d.getTime())) return '—'; var s=Math.floor((Date.now()-d.getTime())/1000); if(s<0) return 'just now'; if(s<60) return 'just now'; var m=Math.floor(s/60); if(m<60) return m+'m ago'; var h=Math.floor(m/60); if(h<24) return h+'h ago'; var dd=Math.floor(h/24); if(dd<30) return dd+'d ago'; var mo=Math.floor(dd/30); if(mo<12) return mo+'mo ago'; return Math.floor(mo/12)+'y ago'; }
+  function dstr(ts){ if(!ts) return '—'; var d=new Date(ts); if(isNaN(d.getTime())) return '—'; return d.toISOString().slice(0,10); }
+  function notify(msg){ try{ if(typeof toast==='function'){ toast(msg); return; } }catch(e){} }
+  function admin(){ try{ return typeof isAdminUser==='function' ? !!isAdminUser() : false; }catch(e){ return false; } }
+  var MEMBERS=[];
+  function initials(m){ var parts=String(m.display_name||m.email||'?').trim().split(' ').filter(Boolean); var a=(parts[0]||'?').charAt(0); var b=parts[1]?parts[1].charAt(0):''; return (a+b).toUpperCase(); }
+  function avatar(m){ if(m.photo_url){ return '<img class="mAv" src="'+esc2(m.photo_url)+'" alt="">'; } return '<span class="mAv">'+esc2(initials(m))+'</span>'; }
+  function tag(txt,cls){ return '<span class="mTag '+(cls||'')+'">'+esc2(txt)+'</span>'; }
+  function ensureCard(){
+    var pa=document.getElementById('p-admin'); if(!pa) return null;
+    var card=document.getElementById('admMembersCard'); if(card) return card;
+    card=document.createElement('div'); card.className='card tool'; card.id='admMembersCard'; card.style.marginBottom='14px';
+    card.innerHTML='<h2>Members <span id="admMemCount" class="mCount"></span></h2><p class="lead">Every Hub member. Search, sort, and manage accounts. Visible to the admin only.</p><div class="mBar"><input id="admMemSearch" class="mIn" type="text" placeholder="Search name, email, or company…" autocomplete="off"><select id="admMemSort" class="mIn"><option value="joined_desc">Newest joined</option><option value="joined_asc">Oldest joined</option><option value="active_desc">Recently active</option><option value="name_asc">Name A–Z</option><option value="posts_desc">Most posts</option></select><button id="admMemRefresh" class="btn ghost">Refresh</button></div><div id="admMemList"><div class="empty">Loading members…</div></div>';
+    var body=document.getElementById('adminBody');
+    if(body && body.parentNode===pa){ pa.insertBefore(card, body); } else { pa.appendChild(card); }
+    document.getElementById('admMemSearch').addEventListener('input', paint);
+    document.getElementById('admMemSort').addEventListener('change', paint);
+    document.getElementById('admMemRefresh').addEventListener('click', function(){ load(true); });
+    return card;
+  }
+  async function load(force){
+    if(!admin()) return;
+    var card=ensureCard(); if(!card) return;
+    var list=document.getElementById('admMemList');
+    if(force) list.innerHTML='<div class="empty">Loading members…</div>';
+    try{
+      var res=await sbc.rpc('admin_list_members');
+      if(res.error){ list.innerHTML='<div class="empty">Could not load members: '+esc2(res.error.message||'error')+'</div>'; return; }
+      MEMBERS=res.data||[]; paint();
+    }catch(e){ list.innerHTML='<div class="empty">Could not load members.</div>'; }
+  }
+  function paint(){
+    var list=document.getElementById('admMemList'); if(!list) return;
+    var q=(document.getElementById('admMemSearch').value||'').toLowerCase().trim();
+    var sort=document.getElementById('admMemSort').value;
+    var rows=MEMBERS.filter(function(m){ if(!q) return true; return ((m.display_name||'')+' '+(m.email||'')+' '+(m.company||'')).toLowerCase().indexOf(q)>=0; });
+    rows.sort(function(a,b){
+      if(sort==='joined_asc') return new Date(a.joined_at)-new Date(b.joined_at);
+      if(sort==='active_desc') return new Date(b.last_active||0)-new Date(a.last_active||0);
+      if(sort==='name_asc') return String(a.display_name||a.email||'').localeCompare(String(b.display_name||b.email||''));
+      if(sort==='posts_desc') return (b.posts||0)-(a.posts||0);
+      return new Date(b.joined_at)-new Date(a.joined_at);
+    });
+    var cnt=document.getElementById('admMemCount'); if(cnt) cnt.textContent=MEMBERS.length+(MEMBERS.length===1?' member':' members');
+    if(!rows.length){ list.innerHTML='<div class="empty">No members match.</div>'; return; }
+    list.innerHTML=rows.map(rowHTML).join(''); wire(list);
+  }
+  function rowHTML(m){
+    var name=esc2(m.display_name||'(no name set)');
+    var tags=(m.is_sme?tag('✓ Verified expert','mTok'):'')+(m.deactivated_at?tag('Deactivated','mBad'):tag('Active','mOk'))+(m.approved?'':tag('Not approved','mWarn'));
+    if(m.sme_status && m.sme_status!=='none' && m.sme_status!=='approved') tags+=tag('Expert req: '+m.sme_status,'');
+    var meta='<div class="mMeta"><span>Joined '+dstr(m.joined_at)+'</span><span>Active '+ago(m.last_active)+'</span><span>Sign-in '+ago(m.last_sign_in_at)+'</span><span>'+(m.posts||0)+' posts · '+(m.replies||0)+' replies</span><span>'+(m.views||0)+' views</span>'+(m.state?'<span>'+esc2(m.state)+'</span>':'')+'</div>';
+    var bio=m.bio?'<div class="mBio">'+esc2(m.bio)+'</div>':'';
+    var id=esc2(m.id);
+    var acts='<div class="mActs"><button class="btn ghost xs" data-act="edit" data-id="'+id+'">Edit</button><button class="btn ghost xs" data-act="expert" data-id="'+id+'">'+(m.is_sme?'Remove blue check':'Make verified expert')+'</button><button class="btn ghost xs" data-act="active" data-id="'+id+'">'+(m.deactivated_at?'Reactivate':'Deactivate')+'</button><button class="btn xs" data-act="msg" data-id="'+id+'">Message</button></div>';
+    var edit='<div class="mEdit" id="mEdit-'+id+'" style="display:none"><label>Name<input data-f="display_name" value="'+esc2(m.display_name||'')+'"></label><label>Company<input data-f="company" value="'+esc2(m.company||'')+'"></label><label>State<input data-f="state" value="'+esc2(m.state||'')+'"></label><label>Facility type<input data-f="facility_type" value="'+esc2(m.facility_type||'')+'"></label><label>Bio<textarea data-f="bio" rows="2">'+esc2(m.bio||'')+'</textarea></label><label class="mChk"><input type="checkbox" data-f="approved" '+(m.approved?'checked':'')+'> Approved (member access)</label><div class="mEditBtns"><button class="btn xs" data-act="save" data-id="'+id+'">Save</button><button class="btn ghost xs" data-act="canceledit" data-id="'+id+'">Cancel</button></div></div>';
+    return '<div class="mRow" data-row="'+id+'"><div class="mTop">'+avatar(m)+'<div class="mName">'+name+' '+tags+'<div class="mEmail">'+esc2(m.email||'')+(m.company?' · '+esc2(m.company):'')+'</div></div></div>'+meta+bio+acts+edit+'</div>';
+  }
+  function memById(id){ for(var i=0;i<MEMBERS.length;i++){ if(MEMBERS[i].id===id) return MEMBERS[i]; } return null; }
+  function wire(list){ list.querySelectorAll('[data-act]').forEach(function(b){ b.addEventListener('click', function(){ act(b.getAttribute('data-act'), b.getAttribute('data-id'), b); }); }); }
+  async function act(a, id, btn){
+    var m=memById(id);
+    if(a==='canceledit'){ var e2=document.getElementById('mEdit-'+id); if(e2) e2.style.display='none'; return; }
+    if(!m) return;
+    if(a==='edit'){ var e=document.getElementById('mEdit-'+id); if(e) e.style.display=(e.style.display==='none'?'block':'none'); return; }
+    if(a==='msg'){ if(typeof window.openDM==='function'){ window.openDM(id, m.display_name||m.email); } else { notify('Direct messaging ships in the next update.'); } return; }
+    if(a==='expert'){ var mk=!m.is_sme; if(!confirm(mk?('Give '+(m.display_name||m.email)+' the verified-expert blue check?'):('Remove verified-expert status from '+(m.display_name||m.email)+'?'))) return; await save(id,{is_sme:mk, sme_status:mk?'approved':'none'}, btn); return; }
+    if(a==='active'){ var de=!m.deactivated_at; if(!confirm(de?('Deactivate '+(m.display_name||m.email)+'? They lose member access until reactivated. This is reversible.'):('Reactivate '+(m.display_name||m.email)+'?'))) return; await save(id,{deactivated_at: de?new Date().toISOString():null}, btn); return; }
+    if(a==='save'){ var row=document.getElementById('mEdit-'+id); if(!row) return; var patch={}; row.querySelectorAll('[data-f]').forEach(function(f){ var k=f.getAttribute('data-f'); if(f.type==='checkbox') patch[k]=f.checked; else patch[k]=(f.value.trim()||null); }); await save(id, patch, btn); return; }
+  }
+  async function save(id, patch, btn){
+    if(btn) btn.disabled=true;
+    try{ var res=await sbc.from('profiles').update(patch).eq('id', id); if(res.error){ notify('Save failed: '+(res.error.message||'error')); } else { notify('Saved.'); await load(false); } }
+    catch(e){ notify('Save failed.'); }
+    if(btn) btn.disabled=false;
+  }
+  function initMembers(){
+    var pa=document.getElementById('p-admin'); if(!pa) return;
+    try{ var obs=new MutationObserver(function(){ if(pa.classList.contains('active') && admin()){ load(false); } }); obs.observe(pa,{attributes:true, attributeFilter:['class']}); }catch(e){}
+    if(pa.classList.contains('active') && admin()){ load(false); }
+  }
+  window.__renderMembers = load;
+})();
+
+</script>
 </body>
 </html>
