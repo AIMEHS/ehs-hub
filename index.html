@@ -1352,9 +1352,11 @@ function adminAccountsHTML(accts){
   var rows=accts.map(function(a){
     var who=esc(a.display_name||a.email||a.id)+(a.display_name&&a.email?' · '+esc(a.email):"")+(a.company?' · '+esc(a.company):"");
     var when=a.created_at?new Date(a.created_at).toLocaleDateString():"";
-    var act=a.approved
+    var isAdminAcct=(a.email||"").toLowerCase()==="chad@aim-env.com";
+    var delBtn=isAdminAcct?"":' <button class="btn ghost" data-act="del_acct" data-id="'+a.id+'" data-who="'+esc(a.display_name||a.email||"")+'">Delete…</button>';
+    var act=(a.approved
       ?'<span class="tag">approved</span> <button class="btn ghost" data-act="revoke_acct" data-id="'+a.id+'">Revoke</button>'
-      :'<span class="tag">PENDING</span> <button class="btn ok" data-act="approve_acct" data-id="'+a.id+'">Approve</button>';
+      :'<span class="tag">PENDING</span> <button class="btn ok" data-act="approve_acct" data-id="'+a.id+'">Approve</button>')+delBtn;
     return '<div class="aprow"><span>'+who+' <span class="note">'+when+'</span></span><span class="aact">'+act+'</span></div>';
   }).join("");
   return '<div class="asec" id="asec-accounts"><h3>Member accounts <span class="cnt">'+pend+' pending / '+accts.length+'</span></h3><div class="acard">'+(rows||'<p class="note">No accounts yet.</p>')+'</div></div>';
@@ -1491,6 +1493,7 @@ async function adminAction(act,id,btn){
     else if(act==="reject_sme"){await sbc.from("profiles").update({sme_status:"rejected"}).eq("id",id);}
     else if(act==="approve_acct"){await sbc.from("profiles").update({approved:true}).eq("id",id);}
     else if(act==="revoke_acct"){await sbc.from("profiles").update({approved:false}).eq("id",id);}
+    else if(act==="del_acct"){var who=btn.dataset.who||"this account";var typed=prompt("PERMANENTLY delete "+who+"?\n\nRemoves their sign-in, profile, posts and replies. Tickets are kept (anonymized). This CANNOT be undone.\n\nType DELETE to confirm:");if(typed!=="DELETE"){toast("Delete cancelled.");return;}var rd=await sbc.rpc("admin_delete_member",{p_user_id:id});if(rd.error){toast("Delete failed: "+(rd.error.message||"error"));return;}toast("Account permanently deleted.");}
     else if(act==="addnote"){var inp=btn.closest(".acard").querySelector(".tninput");var v=(inp&&inp.value.trim())||"";if(!v)return;await sbc.from("feedback_notes").insert({feedback_id:id,note:v,author_email:(window.__USER&&window.__USER.email)||null});if(inp)inp.value="";await refreshTickets();return;}
     else if(act==="reply"){await sendAdminReply(id,btn);return;}
     loadAdmin();
