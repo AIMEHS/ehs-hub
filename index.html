@@ -1995,11 +1995,12 @@ if(!sbc&&!window.__pvSent){window.__pvSent=true;pvSend("view");}
   };
   window.founderBadge=function(n,big){
     var t=window.founderTier(n); if(!t) return "";
-    return '<span class="fbadge ftier-'+t.key+(big?' big':'')+'" title="Founding Member #'+n+' — '+t.name+' ('+t.blurb+')">'+t.emoji+' #'+n+'</span>';
+    var tip=t.name+" — Founding Member #"+n+" ("+t.blurb+")";
+    return '<span class="fbadge bTip ftier-'+t.key+(big?' big':'')+'" data-tip="'+tip+'" title="'+tip+'">'+t.emoji+' #'+n+'</span>';
   };
   /* AIM team badge (Chad + Lance) — overrides the founder tier badge for them */
   window.aimBadge=function(big){
-    return '<img class="aimbadge'+(big?' big':'')+'" src="/badge-aim.png" alt="AIM" title="AIM EH&S">';
+    return '<span class="bTip" data-tip="Champion" title="Champion"><img class="aimbadge'+(big?' big':'')+'" src="/badge-aim.png" alt="Champion"></span>';
   };
   /* pick the right badge for a feed post / profile */
   window.memberBadge=function(badgeKey,founderNo,big){
@@ -2361,6 +2362,55 @@ html[data-theme="dark"] .foundme.aimteam{background:#2a1a0d;border-color:#7a4a1a
     try{ if(sbc && sbc.auth && sbc.auth.onAuthStateChange){ sbc.auth.onAuthStateChange(function(){ setTimeout(function(){ if(uid()){ ensureInboxRealtime(); loadInbox().catch(function(){}); ensureConvosCard(); enhanceCommunity(); } else { totalUnread=0; paintBadge(); inboxThreads=[]; } }, 300); }); } }catch(e){}
   }
   ready(function(){ setTimeout(init, 450); });
+})();
+</script>
+<style>
+/* ==== #22 badge tooltips + #26 admin alert badges (2026-06-11) ==== */
+.bTip{position:relative;cursor:help}
+.bTip:hover::after{content:attr(data-tip);position:absolute;left:50%;bottom:140%;transform:translateX(-50%);background:#111;color:#fff;font:600 11px var(--font);padding:4px 9px;border-radius:6px;white-space:nowrap;z-index:1000;pointer-events:none;box-shadow:0 4px 14px rgba(0,0,0,.35)}
+.bTip:hover::before{content:"";position:absolute;left:50%;bottom:128%;transform:translateX(-50%);border:5px solid transparent;border-top-color:#111;z-index:1000;pointer-events:none}
+.admNavBadge{display:inline-block;min-width:16px;height:16px;line-height:16px;text-align:center;background:var(--bad,#e23);color:#fff;border-radius:999px;font:700 10px var(--font);padding:0 5px;margin-left:6px;vertical-align:middle}
+.admTabBadge{display:inline-block;min-width:16px;height:16px;line-height:16px;text-align:center;background:var(--bad,#e23);color:#fff;border-radius:999px;font:700 10px var(--font);padding:0 5px;margin-left:5px}
+</style>
+<script>
+/* ==== #26: admin alert badges — pending counts on the Admin tab + sub-nav (admin only) ==== */
+(function(){
+  function admin(){ try{ return typeof isAdminUser==='function' && !!isAdminUser(); }catch(e){ return false; } }
+  function cnt(p){ return (p && typeof p.count==='number') ? p.count : 0; }
+  async function getCounts(){
+    var c={accounts:0,posts:0,approvals:0,tickets:0};
+    try{
+      var a=await sbc.from('profiles').select('id',{count:'exact',head:true}).eq('approved',false);
+      var p=await sbc.from('community_posts').select('id',{count:'exact',head:true}).eq('status','pending');
+      var ap=await sbc.from('profiles').select('id',{count:'exact',head:true}).or('photo_status.eq.pending,sme_status.eq.pending,logo_status.eq.pending');
+      var tk=await sbc.from('feedback').select('id',{count:'exact',head:true}).eq('status','open');
+      c.accounts=cnt(a); c.posts=cnt(p); c.approvals=cnt(ap); c.tickets=cnt(tk);
+    }catch(e){}
+    return c;
+  }
+  function setBadge(host, n, cls){
+    if(!host) return;
+    var b=host.querySelector('.'+cls);
+    if(n>0){ if(!b){ b=document.createElement('span'); b.className=cls; host.appendChild(b); } b.textContent=n; }
+    else if(b){ b.remove(); }
+  }
+  function paint(c){
+    var total=c.accounts+c.posts+c.approvals; /* "new to look at": signups + posts + approvals */
+    setBadge(document.querySelector('.tab[data-p="admin"]'), total, 'admTabBadge');
+    var map={'asec-accounts':c.accounts,'admMembersCard':c.accounts,'asec-posts':c.posts,'asec-approvals':c.approvals,'asec-tickets':c.tickets};
+    var nav=document.getElementById('admNav');
+    if(nav) nav.querySelectorAll('button[data-sec]').forEach(function(btn){ setBadge(btn, map[btn.getAttribute('data-sec')]||0, 'admNavBadge'); });
+  }
+  var busy=false;
+  async function refresh(){ if(busy || !admin()) return; busy=true; try{ paint(await getCounts()); }catch(e){} busy=false; }
+  function init(){
+    setTimeout(refresh, 1600);
+    setInterval(refresh, 20000);
+    try{ if(sbc && sbc.auth && sbc.auth.onAuthStateChange){ sbc.auth.onAuthStateChange(function(){ setTimeout(refresh, 600); }); } }catch(e){}
+    var pa=document.getElementById('p-admin');
+    if(pa){ try{ new MutationObserver(function(){ if(pa.classList.contains('active')) setTimeout(refresh, 500); }).observe(pa,{attributes:true,attributeFilter:['class']}); }catch(e){} }
+  }
+  if(document.readyState!=='loading') setTimeout(init,300); else document.addEventListener('DOMContentLoaded',function(){ setTimeout(init,300); });
 })();
 </script>
 </body>
