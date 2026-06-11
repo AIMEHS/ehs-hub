@@ -1343,31 +1343,48 @@ function adminAccountsHTML(accts){
       :'<span class="tag">PENDING</span> <button class="btn ok" data-act="approve_acct" data-id="'+a.id+'">Approve</button>';
     return '<div class="aprow"><span>'+who+' <span class="note">'+when+'</span></span><span class="aact">'+act+'</span></div>';
   }).join("");
-  return '<div class="asec"><h3>Member accounts <span class="cnt">'+pend+' pending / '+accts.length+'</span></h3><div class="acard">'+(rows||'<p class="note">No accounts yet.</p>')+'</div></div>';
+  return '<div class="asec" id="asec-accounts"><h3>Member accounts <span class="cnt">'+pend+' pending / '+accts.length+'</span></h3><div class="acard">'+(rows||'<p class="note">No accounts yet.</p>')+'</div></div>';
 }
+function pvLabel(v){
+  var p=v.path||"",e=v.event||"view";
+  if(e==="view")return "Visited the Hub";
+  if(e==="signin")return "Signed in";
+  if(e==="tab")return "Opened the “"+p.replace("/tab/","")+"” tab";
+  if(e==="packet")return "Generated requirements packet "+p.replace("/packet/","").replace(/-/g," ");
+  if(e==="adi_summary")return "Pulled ADI summary "+p.replace("/adi-summary/","");
+  if(e==="ref")return "Opened rule text "+p.replace("/ref/","");
+  return e+(p&&p!=="/"?" · "+p:"");
+}
+function tfTog(i){var d=document.getElementById("tfd-"+i);if(d)d.style.display=(d.style.display==="block"?"none":"block");}
 function adminTrafficHTML(pv){
+  var adminVids={};
+  pv.forEach(function(v){if((v.email||"").toLowerCase()==="chad@aim-env.com"&&v.vid)adminVids[v.vid]=1;});
+  pv=pv.filter(function(v){return (v.email||"").toLowerCase()!=="chad@aim-env.com"&&!(v.vid&&adminVids[v.vid]);});
   var uniq={},days={},known={};
   pv.forEach(function(v){
     if(v.vid){uniq[v.vid]=uniq[v.vid]||[];uniq[v.vid].push(v);if(v.email&&!known[v.vid])known[v.vid]=v.email;}
     if(v.event==="view"){var d=(v.ts||"").slice(0,10);days[d]=(days[d]||0)+1;}
   });
   var dayChips=Object.keys(days).sort().slice(-14).map(function(d){return '<span class="chip" style="cursor:default">'+esc(d.slice(5))+' · '+days[d]+'</span>';}).join(" ");
-  var vidRows=Object.keys(uniq).map(function(vid){
+  var vidRows=Object.keys(uniq).map(function(vid,i){
     var vs=uniq[vid];var last=vs[0];
     var views=vs.filter(function(x){return x.event==="view";}).length;
     var sessions={};vs.forEach(function(x){if(x.sid)sessions[x.sid]=1;});
-    return '<div class="aprow"><span><b>'+esc(known[vid]||"Anonymous visitor")+'</b> <span class="note">'+esc(String(vid).slice(0,8))+'… · '+views+' visit(s) over '+Object.keys(sessions).length+' session(s) · last seen '+new Date(last.ts).toLocaleString()+'</span><div class="note">'+esc((last.ua||"").slice(0,90))+(last.referrer?' · from '+esc(last.referrer.slice(0,60)):"")+(last.screen?' · '+esc(last.screen):"")+'</div></span></div>';
+    var det=vs.slice(0,15).map(function(x){return '<div class="tfevt"><span class="note">'+esc(new Date(x.ts).toLocaleString())+'</span> — '+esc(pvLabel(x))+'</div>';}).join("");
+    return '<div class="aprow"><span><b>'+esc(known[vid]||"Anonymous visitor")+'</b> <span class="note">'+esc(String(vid).slice(0,8))+'… · '+views+' visit(s) over '+Object.keys(sessions).length+' session(s) · last seen '+new Date(last.ts).toLocaleString()+'</span><div class="note">'+esc((last.ua||"").slice(0,90))+(last.referrer?' · from '+esc(last.referrer.slice(0,60)):"")+(last.screen?' · '+esc(last.screen):"")+'</div>'+
+      '<button class="btn ghost" style="margin-top:6px;padding:4px 10px;font-size:12px" onclick="tfTog('+i+')">Activity ▾</button><div class="tfdet" id="tfd-'+i+'">'+(det||'<div class="tfevt">No detailed events yet.</div>')+'</div></span></div>';
   }).join("");
-  return '<div class="asec"><h3>Site traffic <span class="cnt">'+Object.keys(uniq).length+' device(s) · '+pv.length+' recent events</span></h3>'+
-    '<div class="tfilters"><div class="tfrow">'+(dayChips||'<span class="note">Tracking starts now — visits will appear here from today forward.</span>')+'</div></div>'+
-    '<div class="acard">'+(vidRows||'<p class="note">No visits recorded yet (tracking began with this deploy).</p>')+'</div></div>';
+  return '<div class="asec" id="asec-traffic"><h3>Site traffic <span class="cnt">'+Object.keys(uniq).length+' device(s) · '+pv.length+' recent events</span></h3>'+
+    '<p class="note" style="margin:4px 0 8px">Your own (admin) visits are hidden from this view. “Activity” shows tabs opened, packets generated, ADI summaries pulled, and rule text opened — tracked from this deploy forward.</p>'+
+    '<div class="tfilters"><div class="tfrow">'+(dayChips||'<span class="note">No visitor activity recorded yet.</span>')+'</div></div>'+
+    '<div class="acard">'+(vidRows||'<p class="note">No visits recorded yet.</p>')+'</div></div>';
 }
 function adminPostsHTML(posts){
   var rows=posts.map(function(p){
     var who=p.anonymous?'Anonymous ('+esc(p.author_name||p.user_id||"")+')':esc(p.author_name||"");
     return '<div class="acard"><div class="meta">'+(p.parent_id?'<span class="tag">Answer</span> ':'<span class="tag">Question</span> ')+who+(p.anonymous?' <span class="tag">anon</span>':"")+'</div>'+(p.title?'<div class="atitle">'+esc(p.title)+'</div>':"")+'<div class="abody">'+esc(p.body)+'</div><div class="aact"><button class="btn ok" data-act="approve_post" data-id="'+p.id+'">Approve</button><button class="btn ghost" data-act="reject_post" data-id="'+p.id+'">Reject</button></div></div>';
   }).join("");
-  return '<div class="asec"><h3>Pending posts <span class="cnt">'+posts.length+'</span></h3>'+(posts.length?rows:'<p class="note">Nothing waiting.</p>')+'</div>';
+  return '<div class="asec" id="asec-posts"><h3>Pending posts <span class="cnt">'+posts.length+'</span></h3>'+(posts.length?rows:'<p class="note">Nothing waiting.</p>')+'</div>';
 }
 function adminApprovalsHTML(profs){
   var rows=profs.map(function(p){
@@ -1377,7 +1394,7 @@ function adminApprovalsHTML(profs){
     if(p.sme_status==="pending")blocks+='<div class="aprow"><span>Verified expert<div class="note">'+esc(p.sme_note||"(no note)")+'</div></span><span class="aact"><button class="btn ok" data-act="approve_sme" data-id="'+p.id+'">Approve ✓</button><button class="btn ghost" data-act="reject_sme" data-id="'+p.id+'">Reject</button></span></div>';
     return '<div class="acard"><div class="meta"><b>'+esc(p.display_name||p.email||"Member")+'</b>'+(p.company?' · '+esc(p.company):"")+'</div>'+blocks+'</div>';
   }).join("");
-  return '<div class="asec"><h3>Pending photos, logos &amp; experts <span class="cnt">'+profs.length+'</span></h3>'+(profs.length?rows:'<p class="note">Nothing waiting.</p>')+'</div>';
+  return '<div class="asec" id="asec-approvals"><h3>Pending photos, logos &amp; experts <span class="cnt">'+profs.length+'</span></h3>'+(profs.length?rows:'<p class="note">Nothing waiting.</p>')+'</div>';
 }
 window.__tfilter={status:"open",cat:"all"};
 function tStatus(t){var s=t.status||"open";return s==="new"?"open":s;}
@@ -1389,7 +1406,7 @@ function adminTicketsHTML(){
   var stChips=[["all","All"],["open","Open"],["in_progress","In progress"],["resolved","Resolved"],["closed","Closed"]];
   var sc=stChips.map(function(c){return '<button class="chip tf-st" data-st="'+c[0]+'" aria-pressed="'+(window.__tfilter.status===c[0])+'">'+c[1]+'</button>';}).join("");
   var cc='<button class="chip tf-cat" data-cat="all" aria-pressed="'+(window.__tfilter.cat==="all")+'">All types</button>'+cats.map(function(c){return '<button class="chip tf-cat" data-cat="'+esc(c)+'" aria-pressed="'+(window.__tfilter.cat===c)+'">'+esc(c)+'</button>';}).join("");
-  return '<div class="asec"><h3>Feedback tickets <span class="cnt">'+open+' open / '+T.length+'</span></h3>'+
+  return '<div class="asec" id="asec-tickets"><h3>Feedback tickets <span class="cnt">'+open+' open / '+T.length+'</span></h3>'+
     '<div class="tfilters"><div class="tfrow">'+sc+'</div><div class="tfrow">'+cc+'</div></div>'+
     '<div id="tixList"></div></div>';
 }
@@ -1826,7 +1843,7 @@ if(!sbc&&!window.__pvSent){window.__pvSent=true;pvSend("view");}
     var meta='<div class="mMeta"><span>Joined '+dstr(m.joined_at)+'</span><span>Active '+ago(m.last_active)+'</span><span>Sign-in '+ago(m.last_sign_in_at)+'</span><span>'+(m.posts||0)+' posts · '+(m.replies||0)+' replies</span><span>'+(m.views||0)+' views</span>'+(m.state?'<span>'+esc2(m.state)+'</span>':'')+'</div>';
     var bio=m.bio?'<div class="mBio">'+esc2(m.bio)+'</div>':'';
     var id=esc2(m.id);
-    var acts='<div class="mActs"><button class="btn ghost xs" data-act="edit" data-id="'+id+'">Edit</button><button class="btn ghost xs" data-act="expert" data-id="'+id+'">'+(m.is_sme?'Remove blue check':'Make verified expert')+'</button><button class="btn ghost xs" data-act="active" data-id="'+id+'">'+(m.deactivated_at?'Reactivate':'Deactivate')+'</button><button class="btn xs" data-act="msg" data-id="'+id+'">Message</button></div>';
+    var acts='<div class="mActs"><button class="btn ghost xs" data-act="edit" data-id="'+id+'">Edit</button><button class="btn ghost xs" data-act="expert" data-id="'+id+'">'+(m.is_sme?'Remove blue check':'Make verified expert')+'</button><button class="btn ghost xs" data-act="active" data-id="'+id+'">'+(m.deactivated_at?'Reactivate':'Deactivate')+'</button><button class="btn xs" data-act="msg" data-id="'+id+'">Message</button><button class="btn ghost xs mDel" data-act="del" data-id="'+id+'">Delete…</button></div>';
     var edit='<div class="mEdit" id="mEdit-'+id+'" style="display:none"><label>Name<input data-f="display_name" value="'+esc2(m.display_name||'')+'"></label><label>Company<input data-f="company" value="'+esc2(m.company||'')+'"></label><label>State<input data-f="state" value="'+esc2(m.state||'')+'"></label><label>Facility type<input data-f="facility_type" value="'+esc2(m.facility_type||'')+'"></label><label>Bio<textarea data-f="bio" rows="2">'+esc2(m.bio||'')+'</textarea></label><label class="mChk"><input type="checkbox" data-f="approved" '+(m.approved?'checked':'')+'> Approved (member access)</label><div class="mEditBtns"><button class="btn xs" data-act="save" data-id="'+id+'">Save</button><button class="btn ghost xs" data-act="canceledit" data-id="'+id+'">Cancel</button></div></div>';
     return '<div class="mRow" data-row="'+id+'"><div class="mTop">'+avatar(m)+'<div class="mName">'+name+' '+tags+'<div class="mEmail">'+esc2(m.email||'')+(m.company?' · '+esc2(m.company):'')+'</div></div></div>'+meta+bio+acts+edit+'</div>';
   }
@@ -1838,6 +1855,7 @@ if(!sbc&&!window.__pvSent){window.__pvSent=true;pvSend("view");}
     if(!m) return;
     if(a==='edit'){ var e=document.getElementById('mEdit-'+id); if(e) e.style.display=(e.style.display==='none'?'block':'none'); return; }
     if(a==='msg'){ if(typeof window.openDM==='function'){ window.openDM(id, m.display_name||m.email); } else { notify('Direct messaging ships in the next update.'); } return; }
+    if(a==='del'){ var typed=prompt('PERMANENTLY delete '+(m.display_name||m.email)+'?\n\nRemoves their sign-in, profile, posts and replies. Their tickets are kept (anonymized). This CANNOT be undone.\n\nType DELETE to confirm:'); if(typed!=='DELETE'){ notify('Delete cancelled.'); return; } if(btn) btn.disabled=true; try{ var rd=await sbc.rpc('admin_delete_member',{p_user_id:id}); if(rd.error){ notify('Delete failed: '+(rd.error.message||'error')); } else { notify('Member permanently deleted.'); await load(true); } }catch(e3){ notify('Delete failed.'); } if(btn) btn.disabled=false; return; }
     if(a==='expert'){ var mk=!m.is_sme; if(!confirm(mk?('Give '+(m.display_name||m.email)+' the verified-expert blue check?'):('Remove verified-expert status from '+(m.display_name||m.email)+'?'))) return; await save(id,{is_sme:mk, sme_status:mk?'approved':'none'}, btn); return; }
     if(a==='active'){ var de=!m.deactivated_at; if(!confirm(de?('Deactivate '+(m.display_name||m.email)+'? They lose member access until reactivated. This is reversible.'):('Reactivate '+(m.display_name||m.email)+'?'))) return; await save(id,{deactivated_at: de?new Date().toISOString():null}, btn); return; }
     if(a==='save'){ var row=document.getElementById('mEdit-'+id); if(!row) return; var patch={}; row.querySelectorAll('[data-f]').forEach(function(f){ var k=f.getAttribute('data-f'); if(f.type==='checkbox') patch[k]=f.checked; else patch[k]=(f.value.trim()||null); }); await save(id, patch, btn); return; }
@@ -1856,6 +1874,57 @@ if(!sbc&&!window.__pvSent){window.__pvSent=true;pvSend("view");}
   window.__renderMembers = load;
 })();
 
+</script>
+
+<style>
+/* ==== Tickets #20/#17/#21: admin sub-nav, traffic activity, member delete (2026-06-11) ==== */
+#admNav{position:sticky;top:0;z-index:40;display:flex;gap:6px;flex-wrap:wrap;padding:10px 0 8px;background:var(--bg);border-bottom:1px solid var(--line);margin-bottom:10px}
+#admNav button{border:1px solid var(--line);background:var(--chip);color:var(--chip-ink);padding:6px 12px;border-radius:999px;cursor:pointer;font:600 12px var(--font)}
+#admNav button:hover{border-color:var(--brand);color:var(--brand)}
+#p-admin .asec,#admMembersCard{scroll-margin-top:64px}
+.tfdet{display:none;margin-top:6px;padding:8px 10px;border-left:3px solid var(--line);background:var(--panel2);border-radius:0 8px 8px 0}
+.tfevt{font-size:12px;padding:2px 0;color:var(--ink)}
+.mDel{color:var(--bad)!important;border-color:var(--bad)!important}
+</style>
+<script>
+/* ==== Ticket #20: admin section sub-nav (sticky jump links) ==== */
+(function(){
+  var SECS=[['admMembersCard','Members'],['asec-accounts','Accounts'],['asec-posts','Posts'],['asec-approvals','Approvals'],['asec-traffic','Traffic'],['asec-tickets','Tickets']];
+  function ensureNav(){
+    var pa=document.getElementById('p-admin'); if(!pa||document.getElementById('admNav')) return;
+    var nav=document.createElement('div'); nav.id='admNav';
+    nav.innerHTML=SECS.map(function(s){return '<button type="button" data-sec="'+s[0]+'">'+s[1]+'</button>';}).join('');
+    pa.insertBefore(nav,pa.firstChild);
+    nav.addEventListener('click',function(e){
+      var b=e.target&&e.target.closest?e.target.closest('[data-sec]'):null; if(!b) return;
+      var el=document.getElementById(b.getAttribute('data-sec'));
+      if(el) el.scrollIntoView({behavior:'smooth',block:'start'});
+    });
+  }
+  var pa=document.getElementById('p-admin');
+  if(pa){ ensureNav(); try{ new MutationObserver(ensureNav).observe(pa,{childList:true}); }catch(e){} }
+})();
+/* ==== Ticket #17: richer first-party activity beacons (path carries the detail) ==== */
+(function(){
+  window.pvSend=function(ev,pth){
+    try{
+      var vid=localStorage.getItem("hubVid");if(!vid){vid=(crypto.randomUUID?crypto.randomUUID():String(Math.random()).slice(2)+Date.now());localStorage.setItem("hubVid",vid);}
+      var sid=sessionStorage.getItem("hubSid");if(!sid){sid=(crypto.randomUUID?crypto.randomUUID():String(Math.random()).slice(2)+Date.now());sessionStorage.setItem("hubSid",sid);}
+      fetch(SB+"/rest/v1/page_views",{method:"POST",headers:HDRS,body:JSON.stringify({vid:vid,sid:sid,event:ev||"view",path:pth||location.pathname,referrer:(document.referrer||"").slice(0,300)||null,ua:navigator.userAgent.slice(0,300),screen:(screen.width||0)+"x"+(screen.height||0),user_id:window.__USER?window.__USER.id:null,email:window.__USER?window.__USER.email:null})});
+    }catch(e){}
+  };
+  var _tab=window.selectTab,_last=null;
+  window.selectTab=function(p){ _tab(p); try{ if(p!==_last){ _last=p; pvSend("tab","/tab/"+p); } }catch(e){} };
+  var _pkt=window.doPacket;
+  window.doPacket=function(o){ try{ pvSend("packet","/packet/"+((o.t||"40")+"-"+o.p+"-"+o.s)); }catch(e){} return _pkt(o); };
+  var _adis=window.adiSummaryPacket;
+  window.adiSummaryPacket=function(c,b){ try{ pvSend("adi_summary","/adi-summary/"+c); }catch(e){} return _adis(c,b); };
+  var _ref=window.openRef;
+  window.openRef=function(c){ try{ pvSend("ref","/ref/"+String(c).slice(0,80)); }catch(e){} return _ref(c); };
+  var _adip=window.adiPacket;
+  window.adiPacket=function(){ try{ pvSend("packet","/packet/adi-search"); }catch(e){} return _adip(); };
+  var pb=document.getElementById('adiPkt'); if(pb) pb.onclick=window.adiPacket;
+})();
 </script>
 </body>
 </html>
