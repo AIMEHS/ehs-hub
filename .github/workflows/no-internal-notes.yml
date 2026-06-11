@@ -1,0 +1,33 @@
+name: Repo hygiene — no internal notes
+# This repo is PUBLIC. Session handoffs / internal notes must never live here.
+# If one slips in, this workflow auto-removes it and fails loudly so the owner
+# gets a notification email.
+on:
+  push:
+    branches: [main]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Auto-remove internal note files
+        run: |
+          set -e
+          matches=$(find . -path ./.git -prune -o -type f \( -iname '*handoff*' -o -iname 'session-*' \) -print)
+          if [ -z "$matches" ]; then
+            echo "Clean — no internal note files."
+            exit 0
+          fi
+          echo "Internal note files found in a PUBLIC repo:"
+          echo "$matches"
+          git config user.name "repo-hygiene"
+          git config user.email "actions@users.noreply.github.com"
+          echo "$matches" | xargs git rm -f
+          git commit -m "Auto-remove internal note files (public repo — handoffs live off-repo)"
+          git pull --rebase origin main
+          git push origin main
+          echo "::error::Internal note files were committed to this PUBLIC repo and have been auto-removed. Keep session handoffs out of the repo (rule re-affirmed 2026-06-11)."
+          exit 1
