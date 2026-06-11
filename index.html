@@ -375,6 +375,7 @@ button.citelink:hover{background:rgba(14,165,233,.18);text-decoration:underline}
   <section class="panel" id="p-ask">
   <div class="hero" style="margin-bottom:6px"><h1>EHS Community</h1><p>Ask the questions you can't Google — permit edge cases, Method 21 gotchas, reporting headaches — and get answers from other EHS pros and verified experts. Every post is reviewed before it's public, so it stays useful and on-topic.</p></div>
   <div id="commGate"></div>
+  <div id="foundersWall"></div>
   <div id="commList"><div class="empty">Loading the conversation…</div></div>
 </section>
 
@@ -503,6 +504,7 @@ button.citelink:hover{background:rgba(14,165,233,.18);text-decoration:underline}
     <button class="x" id="authClose" aria-label="Close">×</button>
     <h3 id="authTitle">Sign in</h3>
     <div class="sub" id="authSub">Sign in to leave feedback and save your facility settings.</div>
+    <div id="foundFomo"></div>
     <div class="msg" id="authMsg"></div>
     <div class="field"><label>Email</label><input type="text" id="authEmail" autocomplete="email" placeholder="you@company.com"></div>
     <div class="field" id="pwField"><label>Password</label><input type="password" id="authPw" autocomplete="current-password" placeholder="••••••••"></div>
@@ -1046,6 +1048,7 @@ function paintAuth(){
   $("#pwField").style.display=authMode==="forgot"?"none":"flex";
   $("#toSignup").textContent=authMode==="signup"?"Have an account? Sign in":"Create an account";
   $("#toForgot").style.display=authMode==="forgot"?"none":"inline";
+  var ff=$("#foundFomo");if(ff){if(authMode==="signup"){if(typeof refreshFoundFomo==="function")refreshFoundFomo();}else{ff.style.display="none";}}
 }
 function openAuth(mode){authMode=mode||"signin";$("#authMsg").className="msg";paintAuth();authBg.classList.add("open");setTimeout(()=>$("#authEmail").focus(),60);}
 function closeAuth(){authBg.classList.remove("open");}
@@ -1162,8 +1165,9 @@ async function adminDeletePost(id){
 function poster(p){
   if(p.anonymous)return '<span class="psr">'+avatarHTML("?",null,false)+'<b>Anonymous</b></span>';
   var check=p.author_sme?' <span class="bluecheck" title="Verified EHS expert">✓</span>':'';
+  var fb=(typeof founderBadge==='function')?founderBadge(p.author_founder):'';
   var title=p.author_sme?'<span class="smetag">Verified EHS expert</span>':'';
-  return '<span class="psr">'+avatarHTML(p.author_name,p.author_photo,p.author_sme)+'<span class="pscol"><span class="psname"><b class="authlink" data-uid="'+esc(p.user_id||"")+'">'+esc(p.author_name||"Member")+'</b>'+check+'</span>'+title+'</span></span>';
+  return '<span class="psr">'+avatarHTML(p.author_name,p.author_photo,p.author_sme)+'<span class="pscol"><span class="psname"><b class="authlink" data-uid="'+esc(p.user_id||"")+'">'+esc(p.author_name||"Member")+'</b>'+check+fb+'</span>'+title+'</span></span>';
 }
 function wireAuthLinks(scope){(scope||document).querySelectorAll('.authlink').forEach(function(a){if(a.dataset.uid)a.onclick=function(){openProfile(a.dataset.uid);};});}
 async function openProfile(uid){
@@ -1174,7 +1178,8 @@ async function openProfile(uid){
     var initials=((p.display_name||"?").trim().slice(0,1)||"?").toUpperCase();
     var img=p.photo_url?'<img src="'+esc(p.photo_url)+'" alt="">':'<span>'+esc(initials)+'</span>';
     var check=p.is_sme?' <span class="bluecheck">✓</span>':'';
-    $("#profBody").innerHTML='<div class="pbig"><span class="avatar xl">'+img+'</span><div><div class="pname">'+esc(p.display_name||"Member")+check+'</div>'+(p.is_sme?'<div class="smetag">Verified EHS expert</div>':"")+(p.company?'<div class="pcompany">'+esc(p.company)+'</div>':"")+'</div></div>'+(p.bio?'<p class="pbio">'+esc(p.bio)+'</p>':'<p class="note">No bio yet.</p>');
+    var fb=(typeof founderBadge==='function')?founderBadge(p.founder_number,true):'';
+    $("#profBody").innerHTML='<div class="pbig"><span class="avatar xl">'+img+'</span><div><div class="pname">'+esc(p.display_name||"Member")+check+'</div>'+(p.is_sme?'<div class="smetag">Verified EHS expert</div>':"")+(fb?'<div style="margin-top:4px">'+fb+'</div>':"")+(p.company?'<div class="pcompany">'+esc(p.company)+'</div>':"")+'</div></div>'+(p.bio?'<p class="pbio">'+esc(p.bio)+'</p>':'<p class="note">No bio yet.</p>');
   }catch(e){$("#profBody").innerHTML='<div class="note">Couldn\'t load this profile.</div>';}
 }
 
@@ -1189,6 +1194,7 @@ async function loadCommunity(){
   }catch(e){list.innerHTML='<div class="empty">Couldn\'t load the community.</div>';}
 }
 function renderCommGate(){
+  if(typeof renderFoundersWall==='function')renderFoundersWall();
   var g=$("#commGate");if(!g)return;
   if(window.__USER){
     g.innerHTML='<button class="btn" id="askOpen">+ Ask the community</button><div id="askForm"></div>';
@@ -1267,6 +1273,7 @@ function renderProfileSection(){
   if(!window.__USER){host.innerHTML='<p class="note">Sign in to set up your community profile, photo, and expert status.</p>';return;}
   var p=window.__profile||{};
   host.innerHTML=
+    ((typeof foundingBanner==='function')?foundingBanner():"")+
     '<div class="field"><label>Display name</label><input type="text" id="pfName" value="'+esc(p.display_name||"")+'" placeholder="How your name shows in the community"></div>'+
     '<div class="field"><label>Company</label><input type="text" id="pfCompany" value="'+esc(p.company||"")+'"></div>'+
     '<div class="field"><label>Short bio</label><textarea id="pfBio" placeholder="Your EHS background — what you know best.">'+esc(p.bio||"")+'</textarea></div>'+
@@ -1974,6 +1981,70 @@ if(!sbc&&!window.__pvSent){window.__pvSent=true;pvSend("view");}
   if(!navigator.onLine) setNet(false);
   setTimeout(obFlush,4000);
 })();
+/* ==== Ticket #13 Phase 1: Founding Member recognition (badges, wall, FOMO) ==== */
+(function(){
+  /* tiered rarity — the earlier you joined, the rarer the tier */
+  window.founderTier=function(n){
+    n=+n; if(!n) return null;
+    if(n<=10)  return {key:"pioneer",  emoji:"🥇", name:"Pioneer",         blurb:"one of the first 10 ever"};
+    if(n<=50)  return {key:"trail",    emoji:"⚡", name:"Trailblazer",     blurb:"one of the first 50"};
+    return            {key:"founding", emoji:"🌱", name:"Founding Member", blurb:"one of the first 100"};
+  };
+  window.founderBadge=function(n,big){
+    var t=window.founderTier(n); if(!t) return "";
+    return '<span class="fbadge ftier-'+t.key+(big?' big':'')+'" title="Founding Member #'+n+' — '+t.name+' ('+t.blurb+')">'+t.emoji+' #'+n+'</span>';
+  };
+  window.foundingBanner=function(){
+    var p=window.__profile||{}; if(!p.founding_member||!p.founder_number) return "";
+    var t=window.founderTier(p.founder_number);
+    return '<div class="foundme ftier-'+t.key+'"><div class="fmtop">'+t.emoji+' Founding Member <b>#'+p.founder_number+'</b> · <span class="fmtier">'+t.name+'</span></div>'+
+      '<div class="note" style="margin:4px 0 0">You signed up during the open beta — '+t.blurb+'. This badge is yours to keep and shows beside your name across the Hub. Thank you for helping build it. 🙏</div></div>';
+  };
+  window.refreshFoundFomo=async function(){
+    var el=document.getElementById("foundFomo"); if(!el||!window.sbc) return;
+    try{
+      var r=await sbc.rpc("founding_status"); var d=r&&r.data||{};
+      if(d.remaining>0){
+        el.style.display="block";
+        el.innerHTML='🌱 <b>'+d.remaining+'</b> of '+d.cap+' founding-member spots left. Sign up now to claim a permanent <b>Founding Member</b> badge — the first 10 get the rare <b>🥇 Pioneer</b> tier.';
+      } else { el.style.display="block"; el.innerHTML='Founding-member spots are <b>all claimed</b> — but members still shape the beta.'; }
+    }catch(e){}
+  };
+  window.renderFoundersWall=async function(){
+    var host=document.getElementById("foundersWall"); if(!host||!window.sbc) return;
+    if(!window.__USER){ host.innerHTML=""; return; }
+    try{
+      var sr=await sbc.rpc("founding_status"); var s=sr&&sr.data||{};
+      var wr=await sbc.rpc("founders_wall"); var w=(wr&&wr.data)||[];
+      var chips=w.map(function(m){
+        var t=window.founderTier(m.founder_number);
+        return '<span class="fwchip ftier-'+t.key+'" title="'+t.name+'">'+t.emoji+' #'+m.founder_number+' '+esc(m.display_name||"Member")+(m.is_sme?' <span class="bluecheck" style="font-size:11px">✓</span>':"")+(m.company?' <span class="note">· '+esc(m.company)+'</span>':"")+'</span>';
+      }).join("");
+      var left=(s.remaining>0)?('<span class="fwleft">'+s.remaining+' of '+s.cap+' spots left</span>'):'<span class="fwleft">all '+s.cap+' claimed</span>';
+      host.innerHTML='<div class="card tool fwcard"><h2>⭐ Founding Members '+left+'</h2>'+
+        '<p class="lead">The first '+s.cap+' people to join the Hub during open beta. Founding members keep full access as our thanks — and a permanent badge beside their name.'+(s.am_founder?' <b>You\'re Founding Member #'+s.my_number+'.</b>':'')+'</p>'+
+        '<div class="fwgrid">'+(chips||'<span class="note">Be the first — claim #1.</span>')+'</div></div>';
+    }catch(e){ host.innerHTML=""; }
+  };
+})();
 </script>
+<style>
+/* Founding Member flair (#13) */
+.fbadge{display:inline-flex;align-items:center;gap:2px;font-size:11px;font-weight:800;padding:1px 7px;border-radius:999px;margin-left:6px;border:1px solid;vertical-align:middle;white-space:nowrap}
+.fbadge.big{font-size:13px;padding:3px 10px}
+.ftier-pioneer{color:#7a5b00;background:#fff6da;border-color:#e8c95a}
+.ftier-trail{color:#5b21b6;background:#f3ecff;border-color:#c4a6ff}
+.ftier-founding{color:#0f7a4d;background:#e8f9f0;border-color:#86e0b6}
+html[data-theme="dark"] .ftier-pioneer{color:#ffdf80;background:#2a2410;border-color:#7a6520}
+html[data-theme="dark"] .ftier-trail{color:#d6bcff;background:#241733;border-color:#5b3d8a}
+html[data-theme="dark"] .ftier-founding{color:#7ce7b3;background:#0f2a1e;border-color:#1f6a47}
+.foundme{margin:0 0 14px;padding:11px 13px;border-radius:11px;border:1px solid}
+.foundme .fmtop{font-weight:800}.foundme .fmtier{font-weight:700;opacity:.85}
+.fwcard h2{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.fwleft{font-size:12px;font-weight:700;color:var(--warn);background:var(--chip);padding:2px 9px;border-radius:999px}
+.fwgrid{display:flex;flex-wrap:wrap;gap:7px;margin-top:8px}
+.fwchip{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:700;padding:4px 10px;border-radius:999px;border:1px solid}
+#foundFomo{display:none;margin:10px 0 2px;font-size:13px;padding:9px 11px;border-radius:9px;background:var(--panel2);border:1px solid var(--line);color:var(--ink)}
+</style>
 </body>
 </html>
