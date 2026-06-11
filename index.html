@@ -2085,7 +2085,7 @@ html[data-theme="dark"] .foundme.aimteam{background:#2a1a0d;border-color:#7a4a1a
 .dmTh:hover,.dmTh.sel{background:var(--panel2)}
 .dmAv{width:34px;height:34px;border-radius:50%;object-fit:cover;flex:none;display:inline-flex;align-items:center;justify-content:center;background:var(--brand);color:#fff;font:700 12px var(--font)}
 .dmThMain{min-width:0;flex:1}
-.dmThName{font-size:13px;font-weight:700}
+.dmThName{font-size:13px;font-weight:700;display:flex;align-items:center;gap:4px;flex-wrap:wrap}
 .dmThLast{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:190px}
 .dmThMeta{font-size:10px;color:var(--muted);white-space:nowrap}
 .dmBadge{background:var(--brand);color:#fff;border-radius:999px;font:700 10px var(--font);padding:1px 7px;min-width:18px;text-align:center;margin-top:3px}
@@ -2101,7 +2101,7 @@ html[data-theme="dark"] .foundme.aimteam{background:#2a1a0d;border-color:#7a4a1a
 .dmBub{padding:8px 12px;border-radius:14px;font-size:13px;line-height:1.45;white-space:pre-wrap;word-break:break-word;background:var(--panel2);border:1px solid var(--line)}
 .dmRow.me .dmBub{background:var(--brand);color:#fff;border-color:var(--brand)}
 .dmTime{font-size:10px;color:var(--muted);margin-top:3px}
-.dmSender{font-size:10px;color:var(--muted);margin-bottom:2px;font-weight:700}
+.dmSender{font-size:10px;color:var(--muted);margin-bottom:2px;font-weight:700;display:flex;align-items:center;gap:4px}
 .dmCompose{display:flex;gap:8px;padding:10px;border-top:1px solid var(--line)}
 .dmCompose textarea{flex:1;resize:none;border:1px solid var(--line);border-radius:10px;padding:9px 11px;font:13px var(--font);background:var(--panel);color:inherit;max-height:120px}
 .dmSend{border:none;background:var(--brand);color:#fff;border-radius:10px;padding:0 18px;font:700 13px var(--font);cursor:pointer}
@@ -2117,6 +2117,8 @@ html[data-theme="dark"] .foundme.aimteam{background:#2a1a0d;border-color:#7a4a1a
 .dmPick:hover{background:var(--panel2)}
 .dmAdminLive{margin-left:auto;font-size:11px;color:var(--warn);font-weight:700}
 .dmTabBadge{background:var(--brand);color:#fff;border-radius:999px;font:700 10px var(--font);padding:0 6px;margin-left:5px}
+.dmMsgBtn{margin-left:8px;border:1px solid var(--line);background:var(--chip);color:var(--brand);border-radius:999px;padding:1px 9px;font:600 11px var(--font);cursor:pointer;vertical-align:middle}
+.dmMsgBtn:hover{border-color:var(--brand)}
 </style>
 <script>
 /* ==== Build 2: Private messaging (Option A — any member to any member). Member inbox + covert admin monitoring. ==== */
@@ -2130,6 +2132,7 @@ html[data-theme="dark"] .foundme.aimteam{background:#2a1a0d;border-color:#7a4a1a
   function uid(){ return (window.__USER && window.__USER.id) || null; }
   function initials(n){ var p=String(n||'?').trim().split(' ').filter(Boolean); return ((p[0]||'?').charAt(0)+(p[1]?p[1].charAt(0):'')).toUpperCase(); }
   function av(name, photo){ return photo ? '<img class="dmAv" src="'+esc(photo)+'" alt="">' : '<span class="dmAv">'+esc(initials(name))+'</span>'; }
+  function bdg(badge, founder){ try{ return (typeof window.memberBadge==='function' && (badge==='aim'||founder)) ? (' '+window.memberBadge(badge, founder)) : ''; }catch(e){ return ''; } }
   var DISCLOSURE='&#128274; Direct messages may be reviewed by AIM admins for safety &amp; compliance.';
 
   var curThread=null, inboxThreads=[], inboxChan=null, totalUnread=0, convPoll=null;
@@ -2173,17 +2176,19 @@ html[data-theme="dark"] .foundme.aimteam{background:#2a1a0d;border-color:#7a4a1a
       if(!host) return;
       if(!inboxThreads.length){ host.innerHTML='<div class="dmEmpty">No conversations yet. Hit &#8220;New&#8221; to message a member.</div>'; return; }
       host.innerHTML=inboxThreads.map(function(t){
-        return '<div class="dmTh'+(curThread===t.thread_id?' sel':'')+'" data-th="'+t.thread_id+'" data-name="'+esc(t.other_name)+'">'+av(t.other_name,t.other_avatar)+'<div class="dmThMain"><div class="dmThName">'+esc(t.other_name)+'</div><div class="dmThLast">'+esc(t.last_body||'&#8212;')+'</div></div><div style="text-align:right"><div class="dmThMeta">'+ago(t.last_message_at)+'</div>'+((t.unread>0)?'<div class="dmBadge">'+t.unread+'</div>':'')+'</div></div>';
+        return '<div class="dmTh'+(curThread===t.thread_id?' sel':'')+'" data-th="'+t.thread_id+'" data-name="'+esc(t.other_name)+'">'+av(t.other_name,t.other_avatar)+'<div class="dmThMain"><div class="dmThName">'+esc(t.other_name)+bdg(t.other_badge,t.other_founder)+'</div><div class="dmThLast">'+esc(t.last_body||'&#8212;')+'</div></div><div style="text-align:right"><div class="dmThMeta">'+ago(t.last_message_at)+'</div>'+((t.unread>0)?'<div class="dmBadge">'+t.unread+'</div>':'')+'</div></div>';
       }).join('');
       host.querySelectorAll('.dmTh').forEach(function(el){ el.onclick=function(){ openThread(el.dataset.th, el.dataset.name); }; });
     }catch(e){ if(host) host.innerHTML='<div class="dmEmpty">Could not load conversations.</div>'; }
   }
   async function openThread(threadId, otherName){
     curThread=threadId;
+    var th=inboxThreads.filter(function(x){return x.thread_id===threadId;})[0];
+    var hb=th?bdg(th.other_badge,th.other_founder):'';
     var wrap=document.getElementById('dmWrap'); if(wrap) wrap.classList.add('openconv');
     document.querySelectorAll('#dmThreads .dmTh').forEach(function(el){ el.classList.toggle('sel', el.dataset.th===threadId); });
     var conv=document.getElementById('dmConv'); if(!conv) return;
-    conv.innerHTML='<div class="dmConvHead"><button class="dmBack" id="dmBack">&#8249;</button>'+av(otherName,'')+'<b>'+esc(otherName)+'</b></div><div class="dmMsgs" id="dmMsgs"><div class="dmEmpty">Loading&#8230;</div></div><div class="dmCompose"><textarea id="dmInput" rows="1" placeholder="Write a message&#8230;"></textarea><button class="dmSend" id="dmSendBtn">Send</button></div>';
+    conv.innerHTML='<div class="dmConvHead"><button class="dmBack" id="dmBack">&#8249;</button>'+av(otherName,'')+'<b>'+esc(otherName)+'</b>'+hb+'</div><div class="dmMsgs" id="dmMsgs"><div class="dmEmpty">Loading&#8230;</div></div><div class="dmCompose"><textarea id="dmInput" rows="1" placeholder="Write a message&#8230;"></textarea><button class="dmSend" id="dmSendBtn">Send</button></div>';
     document.getElementById('dmBack').onclick=function(){ if(wrap) wrap.classList.remove('openconv'); curThread=null; stopConvPoll(); };
     var ta=document.getElementById('dmInput');
     ta.addEventListener('keydown', function(e){ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); doSend(); } });
@@ -2248,7 +2253,7 @@ html[data-theme="dark"] .foundme.aimteam{background:#2a1a0d;border-color:#7a4a1a
       var r=await sbc.rpc('dm_member_search',{p_q:q||''}); if(r.error) throw r.error;
       var list=r.data||[];
       if(!list.length){ host.innerHTML='<div class="dmEmpty">No members found.</div>'; return; }
-      host.innerHTML=list.map(function(p){ return '<div class="dmPick" data-id="'+p.id+'" data-name="'+esc(p.name)+'">'+av(p.name,p.avatar)+'<div><div style="font-weight:700;font-size:13px">'+esc(p.name)+(p.is_sme?' <span style="color:var(--brand)">&#10003;</span>':'')+'</div>'+(p.company?'<div style="font-size:11px;color:var(--muted)">'+esc(p.company)+'</div>':'')+'</div></div>'; }).join('');
+      host.innerHTML=list.map(function(p){ return '<div class="dmPick" data-id="'+p.id+'" data-name="'+esc(p.name)+'">'+av(p.name,p.avatar)+'<div><div style="font-weight:700;font-size:13px">'+esc(p.name)+bdg(p.badge,p.founder)+(p.is_sme?' <span style="color:var(--brand)">&#10003;</span>':'')+'</div>'+(p.company?'<div style="font-size:11px;color:var(--muted)">'+esc(p.company)+'</div>':'')+'</div></div>'; }).join('');
       host.querySelectorAll('.dmPick').forEach(function(el){ el.onclick=function(){ document.getElementById('dmPickModal').classList.remove('open'); window.openDM(el.dataset.id, el.dataset.name); }; });
     }catch(e){ host.innerHTML='<div class="dmEmpty">Search failed.</div>'; }
   }
@@ -2263,6 +2268,25 @@ html[data-theme="dark"] .foundme.aimteam{background:#2a1a0d;border-color:#7a4a1a
       await openThread(r.data, name||'Member');
     }catch(e){ note('Could not open the conversation.'); }
   };
+
+  /* ---- community feed: add Message buttons to posters ---- */
+  function enhanceCommunity(){
+    if(!uid()) return;
+    document.querySelectorAll('.authlink[data-uid]').forEach(function(el){
+      if(el.__dmEnh) return;
+      var u=el.getAttribute('data-uid'); if(!u || u===uid()) return;
+      el.__dmEnh=1;
+      var nm=(el.textContent||'Member').trim();
+      var btn=document.createElement('button'); btn.type='button'; btn.className='dmMsgBtn'; btn.textContent='Message';
+      btn.onclick=function(ev){ ev.preventDefault(); ev.stopPropagation(); window.openDM(u, nm); };
+      if(el.parentNode) el.parentNode.appendChild(btn);
+    });
+  }
+  function watchCommunity(){
+    var pa=document.getElementById('p-ask'); if(!pa) return;
+    try{ new MutationObserver(function(){ enhanceCommunity(); }).observe(pa,{childList:true,subtree:true}); }catch(e){}
+    enhanceCommunity();
+  }
 
   /* ============ ADMIN MONITORING CONSOLE ============ */
   function ensureConvosCard(){
@@ -2286,7 +2310,7 @@ html[data-theme="dark"] .foundme.aimteam{background:#2a1a0d;border-color:#7a4a1a
       var cc=document.getElementById('admConvCount'); if(cc) cc.textContent=admThreadList.length?('&#183; '+admThreadList.length):'';
       if(!admThreadList.length){ host.innerHTML='<div class="dmEmpty">No conversations yet.</div>'; return; }
       host.innerHTML=admThreadList.map(function(t){
-        return '<div class="dmTh'+(admCurThread===t.thread_id?' sel':'')+'" data-th="'+t.thread_id+'"><div class="dmThMain"><div class="dmThName">'+esc(t.a_name)+' &#8596; '+esc(t.b_name)+'</div><div class="dmThLast">'+esc(t.last_body||'&#8212;')+'</div></div><div style="text-align:right"><div class="dmThMeta">'+ago(t.last_message_at)+'</div><div class="dmThMeta">'+(t.msg_count||0)+' msg</div></div></div>';
+        return '<div class="dmTh'+(admCurThread===t.thread_id?' sel':'')+'" data-th="'+t.thread_id+'"><div class="dmThMain"><div class="dmThName">'+esc(t.a_name)+bdg(t.a_badge,t.a_founder)+' &#8596; '+esc(t.b_name)+bdg(t.b_badge,t.b_founder)+'</div><div class="dmThLast">'+esc(t.last_body||'&#8212;')+'</div></div><div style="text-align:right"><div class="dmThMeta">'+ago(t.last_message_at)+'</div><div class="dmThMeta">'+(t.msg_count||0)+' msg</div></div></div>';
       }).join('');
       host.querySelectorAll('.dmTh').forEach(function(el){ el.onclick=function(){ admOpenThread(el.dataset.th); }; });
     }catch(e){ host.innerHTML='<div class="dmEmpty">Could not load conversations.</div>'; }
@@ -2294,10 +2318,10 @@ html[data-theme="dark"] .foundme.aimteam{background:#2a1a0d;border-color:#7a4a1a
   async function admOpenThread(threadId){
     admCurThread=threadId;
     var t=admThreadList.filter(function(x){return x.thread_id===threadId;})[0]; if(!t) return;
-    admMap={}; admMap[t.a_id]={name:t.a_name, right:false}; admMap[t.b_id]={name:t.b_name, right:true};
+    admMap={}; admMap[t.a_id]={name:t.a_name, badge:t.a_badge, founder:t.a_founder, right:false}; admMap[t.b_id]={name:t.b_name, badge:t.b_badge, founder:t.b_founder, right:true};
     document.querySelectorAll('#admThreads .dmTh').forEach(function(el){ el.classList.toggle('sel', el.dataset.th===threadId); });
     var conv=document.getElementById('admConv'); if(!conv) return;
-    conv.innerHTML='<div class="dmConvHead"><b>'+esc(t.a_name)+' &#8596; '+esc(t.b_name)+'</b><span class="dmAdminLive">&#9679; watching live</span></div><div class="dmMsgs" id="admMsgs"><div class="dmEmpty">Loading&#8230;</div></div>';
+    conv.innerHTML='<div class="dmConvHead"><b>'+esc(t.a_name)+bdg(t.a_badge,t.a_founder)+' &#8596; '+esc(t.b_name)+bdg(t.b_badge,t.b_founder)+'</b><span class="dmAdminLive">&#9679; watching live</span></div><div class="dmMsgs" id="admMsgs"><div class="dmEmpty">Loading&#8230;</div></div>';
     await admLoadMsgs(threadId, true);
   }
   async function admLoadMsgs(threadId, scroll){
@@ -2309,7 +2333,7 @@ html[data-theme="dark"] .foundme.aimteam{background:#2a1a0d;border-color:#7a4a1a
       if(scroll) host.scrollTop=host.scrollHeight;
     }catch(e){ host.innerHTML='<div class="dmEmpty">Could not load.</div>'; }
   }
-  function admRow(m){ var i=admMap[m.sender_id]||{name:'?',right:false}; return '<div class="dmRow'+(i.right?' me':'')+'" data-id="'+m.id+'"><div><div class="dmSender">'+esc(i.name)+'</div><div class="dmBub">'+esc(m.body)+'</div><div class="dmTime">'+timestr(m.created_at)+'</div></div></div>'; }
+  function admRow(m){ var i=admMap[m.sender_id]||{name:'?',right:false}; return '<div class="dmRow'+(i.right?' me':'')+'" data-id="'+m.id+'"><div><div class="dmSender">'+esc(i.name)+bdg(i.badge,i.founder)+'</div><div class="dmBub">'+esc(m.body)+'</div><div class="dmTime">'+timestr(m.created_at)+'</div></div></div>'; }
   function admAppend(m){ var host=document.getElementById('admMsgs'); if(!host || m.thread_id!==admCurThread) return; if(host.querySelector('[data-id="'+m.id+'"]')) return; var em=host.querySelector('.dmEmpty'); if(em) host.innerHTML=''; host.insertAdjacentHTML('beforeend', admRow(m)); host.scrollTop=host.scrollHeight; }
   function ensureAdmRealtime(){
     if(admChan || !admin() || !sbc.channel) return;
@@ -2330,11 +2354,11 @@ html[data-theme="dark"] .foundme.aimteam{background:#2a1a0d;border-color:#7a4a1a
 
   /* ============ INIT ============ */
   function init(){
-    ensureTab(); ensurePanel();
+    ensureTab(); ensurePanel(); watchCommunity();
     var pa=document.getElementById('p-admin');
     if(pa){ try{ new MutationObserver(function(){ if(pa.classList.contains('active') && admin()) ensureConvosCard(); }).observe(pa,{attributes:true,attributeFilter:['class']}); }catch(e){} if(pa.classList.contains('active') && admin()) ensureConvosCard(); }
     if(uid()){ ensureInboxRealtime(); loadInbox().catch(function(){}); }
-    try{ if(sbc && sbc.auth && sbc.auth.onAuthStateChange){ sbc.auth.onAuthStateChange(function(){ setTimeout(function(){ if(uid()){ ensureInboxRealtime(); loadInbox().catch(function(){}); ensureConvosCard(); } else { totalUnread=0; paintBadge(); inboxThreads=[]; } }, 300); }); } }catch(e){}
+    try{ if(sbc && sbc.auth && sbc.auth.onAuthStateChange){ sbc.auth.onAuthStateChange(function(){ setTimeout(function(){ if(uid()){ ensureInboxRealtime(); loadInbox().catch(function(){}); ensureConvosCard(); enhanceCommunity(); } else { totalUnread=0; paintBadge(); inboxThreads=[]; } }, 300); }); } }catch(e){}
   }
   ready(function(){ setTimeout(init, 450); });
 })();
