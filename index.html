@@ -1342,8 +1342,9 @@ async function loadAdmin(){
     var tnotes=(await sbc.from("feedback_notes").select("*").order("created_at")).data||[];
     var accts=(await sbc.from("profiles").select("id,email,display_name,company,approved,created_at").order("created_at",{ascending:false})).data||[];
     var pv=(await sbc.from("page_views").select("ts,vid,sid,path,event,email,ua,referrer,screen").order("ts",{ascending:false}).limit(500)).data||[];
+    var pending=[];try{pending=(await sbc.rpc("admin_pending_signups")).data||[];}catch(e){pending=[];}
     window.__profs=profs;window.__tickets=tickets;window.__tnotes=tnotes;
-    host.innerHTML=adminAccountsHTML(accts)+adminPostsHTML(posts)+adminApprovalsHTML(profs)+adminTrafficHTML(pv)+adminTicketsHTML();
+    host.innerHTML=adminAccountsHTML(accts)+adminPendingHTML(pending)+adminPostsHTML(posts)+adminApprovalsHTML(profs)+adminTrafficHTML(pv)+adminTicketsHTML();
     wireAdmin();wireTickets();
   }catch(e){host.innerHTML='<div class="note">Couldn\'t load admin data: '+esc(String(e.message||e))+'</div>';}
 }
@@ -1360,6 +1361,18 @@ function adminAccountsHTML(accts){
     return '<div class="aprow"><span>'+who+' <span class="note">'+when+'</span></span><span class="aact">'+act+'</span></div>';
   }).join("");
   return '<div class="asec" id="asec-accounts"><h3>Member accounts <span class="cnt">'+pend+' pending / '+accts.length+'</span></h3><div class="acard">'+(rows||'<p class="note">No accounts yet.</p>')+'</div></div>';
+}
+function adminPendingHTML(pending){
+  pending=pending||[];
+  var rows=pending.map(function(u){
+    var who=esc(u.display_name||u.email||u.id)+(u.display_name&&u.email?' · '+esc(u.email):"")+(u.company?' · '+esc(u.company):"");
+    var when=u.created_at?new Date(u.created_at).toLocaleDateString():"";
+    var sent=u.confirmation_sent_at?new Date(u.confirmation_sent_at).toLocaleString():"";
+    return '<div class="aprow"><span>'+who+' <span class="note">signed up '+when+(sent?' · last email '+esc(sent):"")+'</span></span><span class="aact"><button class="btn ok" data-act="resend_confirm" data-email="'+esc(u.email||"")+'">Resend confirmation</button></span></div>';
+  }).join("");
+  return '<div class="asec" id="asec-pending"><h3>Pending email confirmations <span class="cnt">'+pending.length+'</span></h3>'+
+    '<p class="note" style="margin:4px 0 8px">Signed up but have not confirmed their email yet — they cannot sign in until they do. Resend goes out from no-reply@send.aim-env.com.</p>'+
+    '<div class="acard">'+(rows||'<p class="note">No one is waiting to confirm right now.</p>')+'</div></div>';
 }
 function pvLabel(v){
   var p=v.path||"",e=v.event||"view";
@@ -1494,6 +1507,7 @@ async function adminAction(act,id,btn){
     else if(act==="approve_acct"){await sbc.from("profiles").update({approved:true}).eq("id",id);}
     else if(act==="revoke_acct"){await sbc.from("profiles").update({approved:false}).eq("id",id);}
     else if(act==="del_acct"){var who=btn.dataset.who||"this account";var typed=prompt("PERMANENTLY delete "+who+"?\n\nRemoves their sign-in, profile, posts and replies. Tickets are kept (anonymized). This CANNOT be undone.\n\nType DELETE to confirm:");if(typed!=="DELETE"){toast("Delete cancelled.");return;}var rd=await sbc.rpc("admin_delete_member",{p_user_id:id});if(rd.error){toast("Delete failed: "+(rd.error.message||"error"));return;}toast("Account permanently deleted.");}
+    else if(act==="resend_confirm"){var em=btn.dataset.email;if(!em)return;btn.disabled=true;var ot=btn.textContent;btn.textContent="Sending…";var rr=await sbc.auth.resend({type:"signup",email:em});if(rr.error){toast("Resend failed: "+(rr.error.message||"error"));btn.disabled=false;btn.textContent=ot;}else{toast("Confirmation re-sent to "+em);btn.textContent="Sent ✓";}return;}
     else if(act==="addnote"){var inp=btn.closest(".acard").querySelector(".tninput");var v=(inp&&inp.value.trim())||"";if(!v)return;await sbc.from("feedback_notes").insert({feedback_id:id,note:v,author_email:(window.__USER&&window.__USER.email)||null});if(inp)inp.value="";await refreshTickets();return;}
     else if(act==="reply"){await sendAdminReply(id,btn);return;}
     loadAdmin();
