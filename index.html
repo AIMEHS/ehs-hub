@@ -1341,7 +1341,7 @@ async function loadAdmin(){
     var tickets=(await sbc.from("feedback").select("*").order("created_at",{ascending:false})).data||[];
     var tnotes=(await sbc.from("feedback_notes").select("*").order("created_at")).data||[];
     var accts=(await sbc.from("profiles").select("id,email,display_name,company,approved,created_at").order("created_at",{ascending:false})).data||[];
-    var pv=(await sbc.from("page_views").select("ts,vid,sid,path,event,email,ua,referrer,screen").order("ts",{ascending:false}).limit(500)).data||[];
+    var pv=(await sbc.from("page_views").select("ts,vid,sid,path,event,email,ua,referrer,screen,utm_source,utm_medium,utm_campaign").order("ts",{ascending:false}).limit(500)).data||[];
     var pending=[];try{pending=(await sbc.rpc("admin_pending_signups")).data||[];}catch(e){pending=[];}
     window.__profs=profs;window.__tickets=tickets;window.__tnotes=tnotes;
     host.innerHTML=adminAccountsHTML(accts)+adminPendingHTML(pending)+adminPostsHTML(posts)+adminApprovalsHTML(profs)+adminTrafficHTML(pv)+adminTicketsHTML();
@@ -1395,6 +1395,9 @@ function adminTrafficHTML(pv){
     if(v.event==="view"){var d=(v.ts||"").slice(0,10);days[d]=(days[d]||0)+1;}
   });
   var dayChips=Object.keys(days).sort().slice(-14).map(function(d){return '<span class="chip" style="cursor:default">'+esc(d.slice(5))+' · '+days[d]+'</span>';}).join(" ");
+  var srcByVid={};pv.forEach(function(v){if(v.vid&&v.utm_source&&!srcByVid[v.vid])srcByVid[v.vid]=v.utm_source+(v.utm_campaign?" / "+v.utm_campaign:"");});
+  var srcCounts={};Object.keys(uniq).forEach(function(vid){var s=srcByVid[vid]||"direct / untagged";srcCounts[s]=(srcCounts[s]||0)+1;});
+  var srcChips=Object.keys(srcCounts).sort(function(a,b){return srcCounts[b]-srcCounts[a];}).map(function(s){return '<span class="chip" style="cursor:default">'+esc(s)+' · '+srcCounts[s]+'</span>';}).join(" ");
   var vidRows=Object.keys(uniq).map(function(vid,i){
     var vs=uniq[vid];var last=vs[0];
     var views=vs.filter(function(x){return x.event==="view";}).length;
@@ -1405,7 +1408,7 @@ function adminTrafficHTML(pv){
   }).join("");
   return '<div class="asec" id="asec-traffic"><h3>Site traffic <span class="cnt">'+Object.keys(uniq).length+' device(s) · '+pv.length+' recent events</span></h3>'+
     '<p class="note" style="margin:4px 0 8px">Your own (admin) visits are hidden from this view. “Activity” shows tabs opened, packets generated, ADI summaries pulled, and rule text opened — tracked from this deploy forward.</p>'+
-    '<div class="tfilters"><div class="tfrow">'+(dayChips||'<span class="note">No visitor activity recorded yet.</span>')+'</div></div>'+
+    '<div class="tfilters"><div class="tfrow" style="margin-bottom:6px"><b style="font-size:12px;color:var(--muted,#888);margin-right:4px">Sources:</b>'+(srcChips||'<span class="note">none yet</span>')+'</div><div class="tfrow">'+(dayChips||'<span class="note">No visitor activity recorded yet.</span>')+'</div></div>'+
     '<div class="acard">'+(vidRows||'<p class="note">No visits recorded yet.</p>')+'</div></div>';
 }
 function adminPostsHTML(posts){
@@ -1716,11 +1719,20 @@ async function adiSummaryPacket(ctrl,btn){
 })();
 
 /* ---------- PAGE-VIEW BEACON (first-party; counts anonymous visitors too) ---------- */
+function hubUtm(){
+  try{
+    var sp=new URLSearchParams(location.search);
+    var us=sp.get("utm_source"),um=sp.get("utm_medium"),uc=sp.get("utm_campaign");
+    if(us||um||uc){var o={s:(us||"").slice(0,80)||null,m:(um||"").slice(0,80)||null,c:(uc||"").slice(0,120)||null};try{sessionStorage.setItem("hubUtm",JSON.stringify(o));}catch(e){}return o;}
+    var st=sessionStorage.getItem("hubUtm");return st?JSON.parse(st):null;
+  }catch(e){return null;}
+}
 function pvSend(ev){
   try{
     var vid=localStorage.getItem("hubVid");if(!vid){vid=(crypto.randomUUID?crypto.randomUUID():String(Math.random()).slice(2)+Date.now());localStorage.setItem("hubVid",vid);}
     var sid=sessionStorage.getItem("hubSid");if(!sid){sid=(crypto.randomUUID?crypto.randomUUID():String(Math.random()).slice(2)+Date.now());sessionStorage.setItem("hubSid",sid);}
-    fetch(SB+"/rest/v1/page_views",{method:"POST",headers:HDRS,body:JSON.stringify({vid:vid,sid:sid,event:ev||"view",path:location.pathname,referrer:(document.referrer||"").slice(0,300)||null,ua:navigator.userAgent.slice(0,300),screen:(screen.width||0)+"x"+(screen.height||0),user_id:window.__USER?window.__USER.id:null,email:window.__USER?window.__USER.email:null})});
+    var u=hubUtm();
+    fetch(SB+"/rest/v1/page_views",{method:"POST",headers:HDRS,body:JSON.stringify({vid:vid,sid:sid,event:ev||"view",path:location.pathname,referrer:(document.referrer||"").slice(0,300)||null,ua:navigator.userAgent.slice(0,300),screen:(screen.width||0)+"x"+(screen.height||0),user_id:window.__USER?window.__USER.id:null,email:window.__USER?window.__USER.email:null,utm_source:u?u.s:null,utm_medium:u?u.m:null,utm_campaign:u?u.c:null})});
   }catch(e){}
 }
 
@@ -1945,7 +1957,8 @@ if(!sbc&&!window.__pvSent){window.__pvSent=true;pvSend("view");}
     try{
       var vid=localStorage.getItem("hubVid");if(!vid){vid=(crypto.randomUUID?crypto.randomUUID():String(Math.random()).slice(2)+Date.now());localStorage.setItem("hubVid",vid);}
       var sid=sessionStorage.getItem("hubSid");if(!sid){sid=(crypto.randomUUID?crypto.randomUUID():String(Math.random()).slice(2)+Date.now());sessionStorage.setItem("hubSid",sid);}
-      fetch(SB+"/rest/v1/page_views",{method:"POST",headers:HDRS,body:JSON.stringify({vid:vid,sid:sid,event:ev||"view",path:pth||location.pathname,referrer:(document.referrer||"").slice(0,300)||null,ua:navigator.userAgent.slice(0,300),screen:(screen.width||0)+"x"+(screen.height||0),user_id:window.__USER?window.__USER.id:null,email:window.__USER?window.__USER.email:null})});
+      var u=hubUtm();
+      fetch(SB+"/rest/v1/page_views",{method:"POST",headers:HDRS,body:JSON.stringify({vid:vid,sid:sid,event:ev||"view",path:pth||location.pathname,referrer:(document.referrer||"").slice(0,300)||null,ua:navigator.userAgent.slice(0,300),screen:(screen.width||0)+"x"+(screen.height||0),user_id:window.__USER?window.__USER.id:null,email:window.__USER?window.__USER.email:null,utm_source:u?u.s:null,utm_medium:u?u.m:null,utm_campaign:u?u.c:null})});
     }catch(e){}
   };
   var _tab=window.selectTab,_last=null;
