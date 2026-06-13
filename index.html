@@ -348,7 +348,7 @@ button.citelink:hover{background:rgba(14,165,233,.18);text-decoration:underline}
       <div class="thememenu" id="themeMenu"></div>
     </div>
     <div class="acct" id="acct"><button class="linkbtn" id="signinBtn">Sign in</button></div>
-    <a class="cta" href="https://aim-env.com/" title="LDAR, mold & EHS compliance services from AIM EH&S"><span class="cta-lg">aim-env.com →</span><span class="cta-sm">aim-env.com →</span></a>
+    <a class="linkbtn" href="https://aim-env.com/" title="LDAR, mold & EHS compliance services from AIM EH&S">aim-env.com ↗</a>
   </div>
   <div class="tabs"><div class="tabs wrap2" id="tabs"></div></div>
 </header>
@@ -359,7 +359,19 @@ button.citelink:hover{background:rgba(14,165,233,.18);text-decoration:underline}
     <div class="hero">
       <h1>EHS Compliance Command Center</h1>
       <p>What changed, what's due, and what to do about it — for the people who actually file the report. Federal Register rule changes in plain English, a live reporting-deadline calendar, and tools to check enforcement, look up rule text, search EPA applicability determinations, and ask compliance questions. Updated daily.</p>
-      <p class="backlink" style="margin-top:8px">In open beta, free to use while we build — from <a href="https://aim-env.com/">AIM Environmental Health &amp; Safety — LDAR, mold &amp; compliance services at aim-env.com ↗</a></p>
+      <div id="heroCta" style="margin:16px 0 4px">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+          <button class="btn" id="heroSignup">Create your free account →</button>
+          <button class="btn ghost" id="heroSignin">Sign in</button>
+          <span class="note" style="margin-left:2px">Free during the open beta</span>
+        </div>
+        <ul style="margin:14px 0 0;padding:0;list-style:none;display:flex;gap:18px;flex-wrap:wrap;font-size:13px;color:var(--muted)">
+          <li>✓ Deadlines &amp; rule feed tailored to your facility</li>
+          <li>✓ Plain-English summaries of any rule</li>
+          <li>✓ Ask verified EHS experts in the community</li>
+        </ul>
+      </div>
+      <p class="backlink" style="margin-top:10px">Open beta · free while we build · by <a href="https://aim-env.com/">AIM Environmental Health &amp; Safety ↗</a></p>
     </div>
     <div id="facBanner"></div>
 
@@ -1094,6 +1106,7 @@ function renderAcct(){
   const a=$("#acct");
   if(window.__USER){a.innerHTML='<span class="who" title="'+esc(window.__USER.email)+'">'+esc(window.__USER.email)+'</span><button class="linkbtn" id="signoutBtn">Sign out</button>';$("#signoutBtn").onclick=async()=>{if(sbc)await sbc.auth.signOut();};}
   else{a.innerHTML='<button class="linkbtn" id="signinBtn">Sign in</button>';$("#signinBtn").onclick=()=>openAuth("signin");}
+  var hc=$("#heroCta");if(hc){hc.style.display=window.__USER?"none":"";var hs=$("#heroSignup");if(hs)hs.onclick=function(){openAuth("signup");};var hi=$("#heroSignin");if(hi)hi.onclick=function(){openAuth("signin");};}
 }
 async function loadProfileFromAccount(){
   if(!sbc||!window.__USER)return;
