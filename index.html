@@ -667,6 +667,7 @@ $("#enfBtn").onclick=async()=>{
       var snap=d.cached&&d.fetched_at?'<div class="note" style="margin:0 0 8px">📸 Snapshot from EPA ECHO, saved '+esc(String(d.fetched_at).slice(0,10))+(d.stale?' — EPA is limiting live queries right now, so you\'re seeing the most recent saved result. The link below is always current.':'')+'</div>':"";
       if(d.source==="bulk")snap='<div class="note" style="margin:0 0 8px">📦 EPA is limiting live lookups right now, so these results come from our weekly copy of EPA\'s official ECHO bulk dataset (loaded '+esc(String(d.bulk_loaded_at||"").slice(0,10))+'). Facilities with the most recent compliance issues are listed first. The link below is always current.</div>';
       a.innerHTML='<h4>'+esc(d.count||d.facilities.length)+' facilities in '+esc(st)+'</h4>'+snap+d.facilities.map(f=>`<div class="efac"><div class="en">${esc(f.name||"(facility)")}</div><div class="em">${esc(f.city||"")}${f.city?", ":""}${esc(f.state||st)}${f.naics?" · NAICS "+esc(f.naics):""}</div><div class="ep">${f.status?'<span>Status: <b>'+esc(f.status)+'</b></span>':""}${f.inspections?'<span>Inspections: <b>'+esc(f.inspections)+'</b></span>':""}${f.penalties?'<span>Penalties: <b>'+esc(f.penalties)+'</b></span>':""}${f.lastInspection?'<span>Last insp: <b>'+esc(f.lastInspection)+'</b></span>':""}</div>${f.dfr?'<a class="src" href="'+esc(f.dfr)+'" target="_blank" rel="noopener" style="font-size:12px">Detailed facility report ↗</a>':""}</div>`).join("")+'<div class="note">Source: EPA ECHO. <a href="'+esc(d.link)+'" target="_blank" rel="noopener">Open full results on EPA ECHO ↗</a></div>';
+      valueNudge(a, "✓ Live EPA enforcement data for your state. Create a free account to save your searches and unlock the Hub's plain-English rule tools — free during the beta.");
     }else{
       a.innerHTML='<div class="note"><b>Why no results?</b> EPA allows each server about 300 ECHO lookups per hour, and our host\'s shared allowance is used up at the moment — nothing is broken on your end, and it usually clears within the hour. Once one search gets through, the Hub saves a snapshot so later searches load instantly. Your exact search is always available on EPA\'s official site:</div><div style="margin-top:10px"><a class="btn" href="'+esc(d.link||("https://echo.epa.gov/facilities/facility-search/results?p_st="+st))+'" target="_blank" rel="noopener">Open '+esc(st)+' results on EPA ECHO ↗</a></div>';
     }
@@ -725,6 +726,19 @@ function showROptions(list,fromQ){
   a.innerHTML='<h4>Did you mean…</h4>'+(fromQ?'<div class="note" style="margin:0 0 8px">A few rules match “'+esc(fromQ)+'” — pick the one you want:</div>':"")+'<div class="rsugg">'+list.map(function(o,i){return '<button class="chip" data-ro="'+i+'">'+esc(String(o.label).replace(/<[^>]+>/g,""))+'</button>';}).join("")+'</div>';
   $$("#rA [data-ro]").forEach(function(b){b.onclick=function(){doRuleLookup(list[+b.dataset.ro].p);};});
 }
+function valueNudge(host,msg){
+  try{
+    if(!host||window.__USER)return;
+    if(sessionStorage.getItem("hubNudgeX")==="1")return;
+    if(host.querySelector(".vnudge"))return;
+    var n=document.createElement("div");
+    n.className="vnudge";
+    n.innerHTML='<span class="vntx">'+msg+'</span><span class="vnact"><button class="btn xs vngo">Create free account →</button><button class="vnx" aria-label="Dismiss">×</button></span>';
+    host.appendChild(n);
+    n.querySelector(".vngo").onclick=function(){openAuth("signup");};
+    n.querySelector(".vnx").onclick=function(){try{sessionStorage.setItem("hubNudgeX","1");}catch(e){}n.remove();};
+  }catch(e){}
+}
 async function doRuleLookup(p){
   var a=$("#rA"),b=$("#rBtn");b.disabled=true;b.innerHTML='<span class="spin"></span>';a.classList.add("show");a.innerHTML='<span class="note">Pulling current text from the official eCFR…</span>';
   try{
@@ -739,6 +753,7 @@ async function doRuleLookup(p){
       a.innerHTML='<h4>'+esc(d.citation)+' <span style="color:var(--muted);font-weight:600;text-transform:none;letter-spacing:0">· current as of '+esc(d.date)+'</span></h4>'+(d.matchedFrom?'<div class="note" style="margin:0 0 8px">Matched from “'+esc(d.matchedFrom)+'” — confirm it’s the rule you mean.</div>':"")+'<div class="cfrtext">'+esc(d.text)+(d.truncated?"\n\n…(truncated — open the full text via the link)":"")+'</div><div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap"><a class="btn ghost" href="'+esc(d.url)+'" target="_blank" rel="noopener">Open on eCFR.gov ↗</a><button class="btn ghost" id="rSumm">Plain-English summary</button>'+pktBtn+'</div><div class="answer" id="rSummA" style="margin-top:10px"></div><div class="note" style="margin-top:8px">Official source: eCFR.gov, current as of '+esc(d.date)+'. Regulations change — confirm against the governing rule before relying on this.</div>';
       var sb=$("#rSumm");if(sb)sb.onclick=function(){summarizeCfr(d.citation,d.text);};
       var pb=$("#rToPacket");if(pb)pb.onclick=function(){goTab("packet");doPacket({t:String(d.title),p:String(d.part),s:String(d.subpart)});};
+      valueNudge(a, "✓ Official rule text, current as of today. Create a free account to save your lookups and unlock plain-English summaries of any rule — free during the beta.");
     }else{
       a.innerHTML='<div class="empty">'+esc(d.error||"Couldn’t find that. Try a citation like 40 CFR 98.2, or a keyword like “greenhouse gas reporting”.")+'</div>';
     }
@@ -885,6 +900,7 @@ async function doPacket(o){
         try{pvSend("download","/download/packet-"+((o.t||"40")+"-"+o.p+"-"+o.s));}catch(e2){}
       }catch(e1){toast("Couldn't open the document view.");}
     };
+    valueNudge(A, "✓ Packet built from the official eCFR. Create a free account to save your packets and unlock plain-English summaries — free during the beta.");
   }catch(e){A.innerHTML='<div class="note">Network error — please try again.</div>';}
   if(B)B.disabled=false;
 }
@@ -1831,6 +1847,11 @@ if(!sbc&&!window.__pvSent){window.__pvSent=true;pvSend("view");}
 .mBio{font-size:12px;margin-top:6px;opacity:.85}
 .mActs{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
 .btn.xs{padding:4px 10px;font-size:12px}
+.vnudge{margin-top:12px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;background:color-mix(in srgb,var(--brand) 9%,var(--panel));border:1px solid color-mix(in srgb,var(--brand) 32%,var(--line));border-radius:12px;padding:11px 14px}
+.vnudge .vntx{font-size:13.5px;color:var(--ink);font-weight:500;flex:1;min-width:210px;line-height:1.4}
+.vnudge .vnact{display:flex;align-items:center;gap:6px}
+.vnudge .vnx{background:none;border:0;color:var(--muted);font-size:20px;line-height:1;cursor:pointer;padding:0 2px}
+.vnudge .vnx:hover{color:var(--ink)}
 .mEdit{margin-top:10px;border-top:1px solid var(--line,#eee);padding-top:10px;display:grid;gap:6px}
 .mEdit label{display:block;font-size:11px;font-weight:600;color:var(--muted,#888)}
 .mEdit input,.mEdit textarea{width:100%;padding:6px 8px;border:1px solid var(--line,#ccc);border-radius:7px;background:var(--panel,#fff);color:inherit;font-size:13px;margin-top:2px}
