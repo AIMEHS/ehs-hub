@@ -365,6 +365,7 @@ button.citelink:hover{background:rgba(14,165,233,.18);text-decoration:underline}
           <button class="btn ghost" id="heroSignin">Sign in</button>
           <span class="note" style="margin-left:2px">Free during the open beta</span>
         </div>
+        <div id="heroFomo" class="herofomo"></div>
         <ul style="margin:14px 0 0;padding:0;list-style:none;display:flex;gap:18px;flex-wrap:wrap;font-size:13px;color:var(--muted)">
           <li>✓ Deadlines &amp; rule feed tailored to your facility</li>
           <li>✓ Plain-English summaries of any rule</li>
@@ -1123,6 +1124,20 @@ function renderAcct(){
   if(window.__USER){a.innerHTML='<span class="who" title="'+esc(window.__USER.email)+'">'+esc(window.__USER.email)+'</span><button class="linkbtn" id="signoutBtn">Sign out</button>';$("#signoutBtn").onclick=async()=>{if(sbc)await sbc.auth.signOut();};}
   else{a.innerHTML='<button class="linkbtn" id="signinBtn">Sign in</button>';$("#signinBtn").onclick=()=>openAuth("signin");}
   var hc=$("#heroCta");if(hc){hc.style.display=window.__USER?"none":"";var hs=$("#heroSignup");if(hs)hs.onclick=function(){openAuth("signup");};var hi=$("#heroSignin");if(hi)hi.onclick=function(){openAuth("signin");};}
+  if(typeof refreshHeroFomo==="function")refreshHeroFomo();
+}
+async function refreshHeroFomo(){
+  var el=document.getElementById("heroFomo"); if(!el) return;
+  if(window.__USER||!sbc){el.style.display="none";return;}
+  try{
+    var r=await sbc.rpc("founding_status"); var d=(r&&r.data)||{};
+    if(d.cap){
+      el.style.display="inline-block";
+      el.innerHTML=(d.remaining>0)
+        ? '🌱 Only <b>'+d.remaining+'</b> of '+d.cap+' founding-member spots left — sign up free to claim a permanent <b>Founding Member</b> badge.'
+        : '🌱 Join the founding members shaping the EHS Hub beta.';
+    }
+  }catch(e){}
 }
 async function loadProfileFromAccount(){
   if(!sbc||!window.__USER)return;
@@ -1852,6 +1867,7 @@ if(!sbc&&!window.__pvSent){window.__pvSent=true;pvSend("view");}
 .vnudge .vnact{display:flex;align-items:center;gap:6px}
 .vnudge .vnx{background:none;border:0;color:var(--muted);font-size:20px;line-height:1;cursor:pointer;padding:0 2px}
 .vnudge .vnx:hover{color:var(--ink)}
+.herofomo{display:none;margin-top:12px;font-size:13px;font-weight:600;color:var(--ink);background:color-mix(in srgb,var(--good) 13%,var(--panel));border:1px solid color-mix(in srgb,var(--good) 38%,var(--line));border-radius:999px;padding:7px 14px;width:fit-content;max-width:100%}
 .mEdit{margin-top:10px;border-top:1px solid var(--line,#eee);padding-top:10px;display:grid;gap:6px}
 .mEdit label{display:block;font-size:11px;font-weight:600;color:var(--muted,#888)}
 .mEdit input,.mEdit textarea{width:100%;padding:6px 8px;border:1px solid var(--line,#ccc);border-radius:7px;background:var(--panel,#fff);color:inherit;font-size:13px;margin-top:2px}
@@ -2080,7 +2096,7 @@ if(!sbc&&!window.__pvSent){window.__pvSent=true;pvSend("view");}
       '<div class="note" style="margin:4px 0 0">You signed up during the open beta — '+t.blurb+'. This badge is yours to keep and shows beside your name across the Hub. Thank you for helping build it. 🙏</div></div>';
   };
   window.refreshFoundFomo=async function(){
-    var el=document.getElementById("foundFomo"); if(!el||!window.sbc) return;
+    var el=document.getElementById("foundFomo"); if(!el||!sbc) return;
     try{
       var r=await sbc.rpc("founding_status"); var d=r&&r.data||{};
       if(d.remaining>0){
@@ -2090,7 +2106,7 @@ if(!sbc&&!window.__pvSent){window.__pvSent=true;pvSend("view");}
     }catch(e){}
   };
   window.renderFoundersWall=async function(){
-    var host=document.getElementById("foundersWall"); if(!host||!window.sbc) return;
+    var host=document.getElementById("foundersWall"); if(!host||!sbc) return;
     if(!window.__USER){ host.innerHTML=""; return; }
     try{
       var sr=await sbc.rpc("founding_status"); var s=sr&&sr.data||{};
