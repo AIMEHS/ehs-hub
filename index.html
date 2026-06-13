@@ -6,6 +6,8 @@
 <title>EHS Compliance Hub — EHS Tools by AIM EH&S | Open Beta</title>
 <meta name="description" content="EHS compliance tools in open beta: Federal Register rule watch, reporting-deadline calendar, EPA enforcement lookup, eCFR rule-text search, searchable EPA applicability determinations (ADI), and cited requirements packets. Built by AIM Environmental Health & Safety (aim-env.com).">
 <link rel="canonical" href="https://hub.aim-env.com/">
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="apple-touch-icon" href="/favicon.png">
 <meta name="robots" content="index,follow">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="AIM EHS Hub">
@@ -357,7 +359,7 @@ button.citelink:hover{background:rgba(14,165,233,.18);text-decoration:underline}
   <!-- DASHBOARD -->
   <section class="panel active" id="p-dashboard">
     <div class="hero">
-      <h1>EHS Compliance Command Center</h1>
+      <h1>Stay ahead of every EHS rule and deadline.</h1>
       <p>What changed, what's due, and what to do about it — for the people who actually file the report. Federal Register rule changes in plain English, a live reporting-deadline calendar, and tools to check enforcement, look up rule text, search EPA applicability determinations, and ask compliance questions. Updated daily.</p>
       <div id="heroCta" style="margin:16px 0 4px">
         <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
@@ -1072,7 +1074,7 @@ function activeSection(){const t=document.querySelector('.tab[aria-selected="tru
 const FREEMAIL=["gmail.com","googlemail.com","yahoo.com","yahoo.co.uk","ymail.com","hotmail.com","hotmail.co.uk","outlook.com","live.com","msn.com","aol.com","icloud.com","me.com","mac.com","proton.me","protonmail.com","pm.me","gmx.com","gmx.net","mail.com","yandex.com","yandex.ru","mail.ru","fastmail.com","hey.com","duck.com","tutanota.com","tuta.io","zohomail.com","mailinator.com","guerrillamail.com","sharklasers.com","yopmail.com","temp-mail.org","10minutemail.com","dispostable.com","getnada.com","trashmail.com","tempmail.dev","mytemp.email"];
 const authBg=$("#authBg");let authMode="signin";
 function paintAuth(){
-  const T={signin:["Sign in","Sign in to leave feedback and save your facility settings.","Sign in"],signup:["Create your account","Free during the open beta — unlocks feedback and saves your rules across devices.","Create account"],forgot:["Reset password","We'll email you a link to set a new password.","Send reset link"]}[authMode];
+  const T={signin:["Sign in","Sign in to leave feedback and save your facility settings.","Sign in"],signup:["Create your account","Free during the beta. Use your work or school email — we'll send a one-click confirmation link.","Create account"],forgot:["Reset password","We'll email you a link to set a new password.","Send reset link"]}[authMode];
   $("#authTitle").textContent=T[0];$("#authSub").textContent=T[1];$("#authSubmit").textContent=T[2];
   $("#pwField").style.display=authMode==="forgot"?"none":"flex";
   $("#toSignup").textContent=authMode==="signup"?"Have an account? Sign in":"Create an account";
